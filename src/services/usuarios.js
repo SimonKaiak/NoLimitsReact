@@ -5,10 +5,13 @@ const API_BASE =
   "https://nolimits-backend-final.onrender.com";
 
 // IDs de rol (ajusta si en tu BD son otros)
-export const ROL_ADMIN_ID = 1;
-export const ROL_CLIENTE_ID = 2; // 2 = usuario/cliente normal
+export const ROL_ADMIN_ID = 2;
+export const ROL_CLIENTE_ID = 1; // 2 = usuario/cliente normal
 
+// ==========================================================
 // LISTADO + BÚSQUEDA (nombre o correo)
+// Usado en listados tipo AdminUsuarioList "grande" con filtro
+// ==========================================================
 export async function listarUsuarios(page = 1, search = "") {
   const trimmed = search.trim();
 
@@ -32,7 +35,7 @@ export async function listarUsuarios(page = 1, search = "") {
 
   const res = await fetch(endpoint);
 
-  // 👉 Si el back devuelve 404 o 204 cuando no hay coincidencias,
+  // Si el back devuelve 404 o 204 cuando no hay coincidencias,
   // lo tratamos como "sin resultados", no como error.
   if (res.status === 404 || res.status === 204) {
     console.warn("[listarUsuarios] Sin resultados para búsqueda");
@@ -66,14 +69,30 @@ export async function listarUsuarios(page = 1, search = "") {
   };
 }
 
-// OBTENER POR ID
+// ==========================================================
+// CRUD BÁSICO POR ID
+// Usado por AdminUsuarioList y CrearUsuario
+// ==========================================================
+
+// GET /api/v1/usuarios/{id}
 export async function obtenerUsuario(id) {
   const res = await fetch(`${API_BASE}/api/v1/usuarios/${id}`);
-  if (!res.ok) throw new Error("Error obteniendo usuario");
-  return res.json();
+  const text = await res.text();
+
+  if (!res.ok) {
+    console.error("[obtenerUsuario] status:", res.status, text);
+    throw new Error("Error obteniendo usuario");
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error("Respuesta inválida del servidor");
+  }
 }
 
-// CREAR USUARIO (uso general, admin, etc.)
+// POST /api/v1/usuarios
+// Uso general: admin, registro, etc.
 export async function crearUsuario(payload) {
   const res = await fetch(`${API_BASE}/api/v1/usuarios`, {
     method: "POST",
@@ -81,24 +100,76 @@ export async function crearUsuario(payload) {
     body: JSON.stringify(payload),
   });
 
+  const text = await res.text();
+
   if (!res.ok) {
     let error;
     try {
-      error = await res.json();
+      error = JSON.parse(text);
     } catch {
-      throw new Error("Error al crear usuario");
+      throw new Error(text || "Error al crear usuario");
     }
     throw new Error(error.message || "Error al crear usuario");
   }
 
-  return res.json();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 
 /**
- * REGISTRO PÚBLICO DESDE /registro
- * Recibe el formData del componente Registro y arma el payload
- * que espera tu UsuarioModel (telefono Integer, password máx 10, rol CLIENTE).
+ * EDITAR USUARIO
+ * AdminUsuarioList / CrearUsuario (modo "editar") lo usan.
+ * En tu back el PATCH /api/v1/usuarios/{id} está disponible,
+ * así que lo aprovechamos.
  */
+export async function editarUsuario(id, payload) {
+  const res = await fetch(`${API_BASE}/api/v1/usuarios/${id}`, {
+    method: "PATCH", // usas PATCH en tu versión original
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const text = await res.text();
+
+  if (!res.ok) {
+    let error;
+    try {
+      error = JSON.parse(text);
+    } catch {
+      throw new Error(text || "Error al editar usuario");
+    }
+    throw new Error(error.message || "Error al editar usuario");
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+// DELETE /api/v1/usuarios/{id}
+export async function eliminarUsuario(id) {
+  const res = await fetch(`${API_BASE}/api/v1/usuarios/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error("[eliminarUsuario] status:", res.status, text);
+    throw new Error("Error al eliminar usuario");
+  }
+
+  return true;
+}
+
+// ==========================================================
+// REGISTRO PÚBLICO DESDE /registro
+// (sigue usando crearUsuario por debajo)
+// ==========================================================
 export async function registrarUsuario(desdeFormulario) {
   const telefonoLimpio = (desdeFormulario.telefono || "").replace(/\D/g, "");
   const telefonoNumero = Number(telefonoLimpio.slice(-9)); // últimos 9 dígitos
@@ -118,46 +189,9 @@ export async function registrarUsuario(desdeFormulario) {
   return crearUsuario(payload);
 }
 
-// EDITAR USUARIO (PATCH)
-export async function editarUsuario(id, payload) {
-  const res = await fetch(`${API_BASE}/api/v1/usuarios/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    let error;
-    try {
-      error = await res.json();
-    } catch {
-      throw new Error("Error al editar usuario");
-    }
-    throw new Error(error.message || "Error al editar usuario");
-  }
-
-  return res.json();
-}
-
-// ELIMINAR USUARIO
-export async function eliminarUsuario(id) {
-  const res = await fetch(`${API_BASE}/api/v1/usuarios/${id}`, {
-    method: "DELETE",
-  });
-
-  if (!res.ok) throw new Error("Error al eliminar usuario");
-  return true;
-}
-
-/* ================= PERFIL (cuando exista la API real) =================
-
-// Ejemplo futuro real:
-// export async function obtenerMiPerfil() {
-//   const res = await fetch(`${API_BASE}/api/v1/usuarios/me`);
-//   if (!res.ok) throw new Error("Error al obtener perfil");
-//   return res.json();
-// }
-*/
+// ==========================================================
+// PERFIL (cuando exista la API real) + mocks actuales
+// ==========================================================
 
 // MOCK TEMPORAL MIENTRAS NO EXISTE LA API REAL
 export async function obtenerMiPerfil() {

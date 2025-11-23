@@ -1,109 +1,164 @@
-import React, { useEffect, useState } from "react";
-import { ButtonAction } from "../components/atoms/ButtonAction";
-import "../styles/perfil.css"
-import { useNavigate } from "react-router-dom";
-// Modals
-import EditarPerfil from "./EditarPerfil";
-import MisCompras from "./MisCompras";
-
-// Servicios
-import { obtenerMiPerfil } from "../services/usuarios";
+import { useEffect, useState } from "react";
+import styles from "../styles/perfilUsuario.css";
+import { obtenerUsuario, editarUsuario } from "../services/usuarios";
+import { obtenerRegiones } from "../services/regiones";
+import { obtenerComunas } from "../services/comunas";
 
 export default function PerfilUsuario() {
+  const [usuario, setUsuario] = useState(null);
+  const [regiones, setRegiones] = useState([]);
+  const [comunas, setComunas] = useState([]);
+  const [mensaje, setMensaje] = useState("");
 
-    const [usuario, setUsuario] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [modalEditar, setModalEditar] = useState(false);
-    const [modalCompras, setModalCompras] = useState(false);
-    const navigate = useNavigate();
+  const usuarioId = localStorage.getItem("nl_user_id"); // ID real
 
-    useEffect(() => {
-        cargarUsuario();
-    }, []);
+  const [formData, setFormData] = useState({
+    nombre: "",
+    apellidos: "",
+    telefono: "",
+    calle: "",
+    numero: "",
+    complemento: "",
+    codigoPostal: "",
+    regionId: "",
+    comunaId: ""
+  });
 
-    async function cargarUsuario() {
-        setLoading(true);
+  useEffect(() => {
+    obtenerRegiones().then(setRegiones);
 
-        try {
-            const data = await obtenerMiPerfil();
-            setUsuario(data);
+    if (!usuarioId) return;
 
-        } catch (err) {
-            console.error(err);
-            alert("❌ Error al cargar datos del usuario");
-        }
+    obtenerUsuario(usuarioId).then(data => {
+      setUsuario(data);
 
-        setLoading(false);
+      setFormData({
+        nombre: data.nombre,
+        apellidos: data.apellidos,
+        telefono: data.telefono,
+        calle: data.direccion?.calle || "",
+        numero: data.direccion?.numero || "",
+        complemento: data.direccion?.complemento || "",
+        codigoPostal: data.direccion?.codigoPostal || "",
+        regionId: data.regionId || "",
+        comunaId: data.comunaId || ""
+      });
+    });
+  }, [usuarioId]);
+
+  useEffect(() => {
+    if (!formData.regionId) return;
+
+    obtenerComunas().then(data => {
+      const filtradas = data.filter(
+        c => c.region?.id === Number(formData.regionId)
+      );
+      setComunas(filtradas);
+    });
+  }, [formData.regionId]);
+
+  const handleChange = e => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const guardarCambios = async e => {
+    e.preventDefault();
+
+    const payload = {
+      nombre: formData.nombre,
+      apellidos: formData.apellidos,
+      telefono: Number(formData.telefono)
+    };
+
+    try {
+      await editarUsuario(usuarioId, payload);
+      setMensaje("✅ Perfil actualizado correctamente");
+    } catch {
+      setMensaje("❌ Error al actualizar perfil");
     }
+  };
 
-    if (loading) {
-        return <p className="cargando">Cargando perfil...</p>;
-    }
+  if (!usuario) return <p className={styles["perfil-loading"]}>Cargando...</p>;
 
-    if (!usuario) {
-        return <p className="error-msg">No se pudo cargar la información del usuario.</p>;
-    }
+  return (
+    <div className="perfil-page">
+      <div className="perfil-card">
+        <h2 className="perfil-title">Mi Perfil</h2>
 
-    return (
-        <div className="perfil-container">
-            <h1 className="perfil-titulo">Mi Perfil</h1>
-
-            {/* ================= DATOS BÁSICOS ================= */}
-            <div className="perfil-info">
-
-                <h2>Información Personal</h2>
-
-                <p><strong>Nombre:</strong> {usuario.nombre}</p>
-                <p><strong>Apellidos:</strong> {usuario.apellidos}</p>
-                <p><strong>Correo:</strong> {usuario.correo}</p>
-                <p><strong>Teléfono:</strong> {usuario.telefono || "No registrado"}</p>
-
-                <p><strong>Rol:</strong> {usuario.rol?.nombre || "Usuario"}</p>
-
-                {/* =============== DIRECCIÓN (solo lectura) =============== */}
-                <h3>Dirección</h3>
-                {usuario.direccion ? (
-                    <>
-                        <p><strong>Calle:</strong> {usuario.direccion.calle}</p>
-                        <p><strong>Comuna:</strong> {usuario.direccion.comuna?.nombre}</p>
-                        <p><strong>Región:</strong> {usuario.direccion.region?.nombre}</p>
-                    </>
-                ) : (
-                    <p>No hay dirección registrada.</p>
-                )}
+        <form className="perfil-form" onSubmit={guardarCambios}>
+          <div className="perfil-grid">
+            <div className="perfil-field">
+              <label>Nombre</label>
+              <input name="nombre" value={formData.nombre} onChange={handleChange}/>
             </div>
 
-            {/* ================= BOTONES ================= */}
-            <div className="perfil-botones">
-                <ButtonAction
-                    text="Editar Perfil"
-                    onClick={() => setModalEditar(true)}
-                />
-
-                <ButtonAction
-                    text="Mis Compras"
-                    onClick={() => navigate("/mis-compras")}
-                />
+            <div className="perfil-field">
+              <label>Apellidos</label>
+              <input name="apellidos" value={formData.apellidos} onChange={handleChange}/>
             </div>
 
-            {/* ================= MODAL EDITAR PERFIL ================= */}
-            {modalEditar && (
-                <EditarPerfil
-                    usuario={usuario}
-                    onCerrar={() => {
-                        setModalEditar(false);
-                        cargarUsuario(); // refrescar datos
-                    }}
-                />
-            )}
+            <div className="perfil-field">
+              <label>Correo</label>
+              <input value={usuario.correo} disabled />
+            </div>
 
-            {/* ================= MODAL MIS COMPRAS ================= */}
-            {modalCompras && (
-                <MisCompras
-                    usuarioId={usuario.id}
-                    onCerrar={() => setModalCompras(false)}
-                />
-            )}
-        </div>
-    );
+            <div className="perfil-field">
+              <label>Teléfono</label>
+              <input name="telefono" value={formData.telefono} onChange={handleChange}/>
+            </div>
+          </div>
+
+          <h3 className="perfil-subtitle">Dirección</h3>
+
+          <div className="perfil-grid">
+            <div className="perfil-field">
+              <label>Región</label>
+              <select name="regionId" value={formData.regionId} onChange={handleChange}>
+                <option value="">Seleccione región</option>
+                {regiones.map(r => (
+                  <option key={r.id} value={r.id}>{r.nombre}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="perfil-field">
+              <label>Comuna</label>
+              <select name="comunaId" value={formData.comunaId} onChange={handleChange}>
+                <option value="">Seleccione comuna</option>
+                {comunas.map(c => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="perfil-field">
+              <label>Calle</label>
+              <input name="calle" value={formData.calle} onChange={handleChange}/>
+            </div>
+
+            <div className="perfil-field">
+              <label>Número</label>
+              <input name="numero" value={formData.numero} onChange={handleChange}/>
+            </div>
+
+            <div className="perfil-field">
+              <label>Complemento</label>
+              <input name="complemento" value={formData.complemento} onChange={handleChange}/>
+            </div>
+
+            <div className="perfil-field">
+              <label>Código Postal</label>
+              <input name="codigoPostal" value={formData.codigoPostal} onChange={handleChange}/>
+            </div>
+          </div>
+
+          <button className="perfil-btn" type="submit">
+            Guardar cambios
+          </button>
+
+          {mensaje && <p className="perfil-msg">{mensaje}</p>}
+        </form>
+      </div>
+    </div>
+  );
 }

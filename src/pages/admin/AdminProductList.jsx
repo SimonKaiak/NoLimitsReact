@@ -1,195 +1,152 @@
-import React, { useEffect, useState } from "react";
-import { ButtonAction } from "../../components/atoms/ButtonAction.jsx";
-import CrearProducto from "../../components/organisms/CrearProducto.jsx";
-import { useNavigate } from "react-router-dom"; 
-import "../../styles/adminBase.css"
+// Ruta: src/pages/admin/AdminProductList.jsx
 
-// Importar servicios reales
-import { listarProductos, eliminarProducto, obtenerProducto } from "../../services/productos.js";
+import React, { useState } from "react";
+import {
+  obtenerProducto,
+  eliminarProducto,
+} from "../../services/productos";
+import CrearProducto from "../../components/organisms/CrearProducto";
+import "../../styles/adminProductos.css";
 
-export default function AdminProductosList() {
+export default function AdminProductList() {
+  const [busquedaId, setBusquedaId] = useState("");
+  const [resultadoBusqueda, setResultadoBusqueda] = useState(null);
+  const [error, setError] = useState("");
+  const [productoEditando, setProductoEditando] = useState(null);
 
-    const [productos, setProductos] = useState([]);
-    const [busqueda, setBusqueda] = useState("");
-    const [pagina, setPagina] = useState(1);
-    const [totalPaginas, setTotalPaginas] = useState(1);
-    const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
-    
-    // Modal Crear/Editar
-    const [modalData, setModalData] = useState(null);
+  async function buscarPorId(id) {
+    if (!id) return;
+    setError("");
+    setResultadoBusqueda(null);
+    setProductoEditando(null);
 
-    useEffect(() => {
-        cargarProductos();
-    }, [pagina, busqueda]);
-
-    async function cargarProductos() {
-        setLoading(true);
-
-        try {
-            const data = await listarProductos(pagina, busqueda);
-
-            setProductos(data.contenido || []);
-            setTotalPaginas(data.totalPaginas || 1);
-
-        } catch (err) {
-            console.error("Error cargando productos:", err);
-            alert("❌ Error al cargar productos");
-        }
-
-        setLoading(false);
+    try {
+      const prod = await obtenerProducto(id);
+      setResultadoBusqueda(prod);
+    } catch (e) {
+      console.error(e);
+      setError("No se encontró el producto: " + e.message);
     }
+  }
 
-    // -------------------------------------
-    // ELIMINAR PRODUCTO
-    // -------------------------------------
-    const handleEliminar = async (id) => {
-        if (!window.confirm("¿Eliminar este producto?")) return;
+  async function handleBuscarPorId(e) {
+    e.preventDefault();
+    await buscarPorId(busquedaId);
+  }
 
-        try {
-            await eliminarProducto(id);
+  async function handleEliminar(id) {
+    if (!window.confirm("¿Eliminar este producto?")) return;
+    try {
+      await eliminarProducto(id);
+      setResultadoBusqueda(null);
+      setProductoEditando(null);
+    } catch (e) {
+      alert("Error al eliminar: " + e.message);
+    }
+  }
 
-            // Remover del front sin recargar todo
-            setProductos((prev) => prev.filter((p) => p.id !== id));
+  function handleFinEdicion() {
+    setProductoEditando(null);
+    if (busquedaId) {
+      buscarPorId(busquedaId);
+    }
+  }
 
-            alert("Producto eliminado correctamente");
+  return (
+    <div className="admin-products-page">
+      <div className="admin-products-card">
+        <h2 className="admin-products-title">Productos</h2>
 
-        } catch (err) {
-            console.error(err);
-            alert("❌ Error al eliminar producto");
-        }
-    };
+        {/* Buscar por ID */}
+        <form
+          className="admin-products-search"
+          onSubmit={handleBuscarPorId}
+        >
+          <input
+            type="number"
+            className="admin-products-input"
+            value={busquedaId}
+            onChange={(e) => setBusquedaId(e.target.value)}
+            placeholder="Buscar producto por ID"
+          />
+          <button type="submit" className="btn-nl">
+            Buscar
+          </button>
+        </form>
 
-    // -------------------------------------
-    // EDITAR PRODUCTO (traer datos reales)
-    // -------------------------------------
-    const abrirModalEditar = async (productoTabla) => {
-        try {
-            const productoCompleto = await obtenerProducto(productoTabla.id);
+        {error && <p className="admin-products-error">{error}</p>}
 
-            setModalData({
-                modo: "editar",
-                producto: productoCompleto
-            });
-
-        } catch (err) {
-            console.error(err);
-            alert("❌ Error al obtener datos del producto");
-        }
-    };
-
-    return (
-        <div className="admin-wrapper">
-
-            <h1 className="admin-title">Gestionar Productos</h1>
-
-            {/* Buscador */}
-            <div className="admin-form">
-
-                <input
-                    type="text"
-                    placeholder="Buscar por nombre..."
-                    value={busqueda}
-                    onChange={(e) => {
-                        setBusqueda(e.target.value);
-                        setPagina(1);
-                    }}
-                    className="admin-input"
-                />
-
-                <ButtonAction text="Buscar" onClick={() => setPagina(1)} />
-            </div>
-
-            {/* Crear Producto */}
-            <div className="admin-form">
-                <ButtonAction
-                    text="Crear Producto"
-                    onClick={() =>
-                        setModalData({
-                            modo: "crear",
-                            producto: null
-                        })
-                    }
-                />
-            </div>
-
-            {/* Modal Crear / Editar */}
-            {modalData && (
-                <CrearProducto
-                    modo={modalData.modo}
-                    producto={modalData.producto}
-                    onCerrar={() => {
-                        setModalData(null);
-                        cargarProductos();
-                    }}
-                />
-            )}
-
-            {/* Tabla */}
-            <table className="admin-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombre</th>
-                        <th>Precio</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    {loading ? (
-                        <tr>
-                            <td colSpan="4" className="admin-msg">Cargando...</td>
-                        </tr>
-                    ) : productos.length === 0 ? (
-                        <tr>
-                            <td colSpan="4" className="admin-msg">No hay resultados</td>
-                        </tr>
-                    ) : (
-                        productos.map((p) => (
-                            <tr key={p.id}>
-                                <td>{p.id}</td>
-                                <td>{p.nombre}</td>
-                                <td>${p.precio.toLocaleString()}</td>
-
-                                <td className="admin-actions">
-                                    {/* EDITAR */}
-                                    <ButtonAction
-                                        text="Editar"
-                                        onClick={() => abrirModalEditar(p)}
-                                    />
-
-                                    {/* ELIMINAR */}
-                                    <ButtonAction
-                                        text="Eliminar"
-                                        onClick={() => handleEliminar(p.id)}
-                                    />
-                                </td>
-                            </tr>
-                        ))
-                    )}
-                </tbody>
+        {/* Resultado de la búsqueda */}
+        {resultadoBusqueda && (
+          <div className="admin-products-result">
+            <table className="admin-products-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>Precio</th>
+                  <th>Tipo</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>{resultadoBusqueda.id}</td>
+                  <td>{resultadoBusqueda.nombre}</td>
+                  <td>${resultadoBusqueda.precio}</td>
+                  <td>{resultadoBusqueda.tipoProducto?.nombre}</td>
+                  <td>{resultadoBusqueda.estado?.nombre}</td>
+                  <td className="admin-products-actions">
+                    <button
+                      type="button"
+                      className="btn-nl btn-nl-secondary"
+                      onClick={() => setProductoEditando(resultadoBusqueda)}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-nl btn-nl-danger"
+                      onClick={() => handleEliminar(resultadoBusqueda.id)}
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
             </table>
+          </div>
+        )}
+      </div>
 
-            {/* Paginación */}
-            <div className="admin-pagination">
+      {/* Crear producto */}
+      <div className="admin-products-card">
+        <CrearProducto
+          modo="crear"
+          onFinish={() => {
+            if (busquedaId) buscarPorId(busquedaId);
+          }}
+        />
+      </div>
 
-                <ButtonAction
-                    text="Anterior"
-                    disabled={pagina <= 1}
-                    onClick={() => setPagina((prev) => prev - 1)}
-                />
-
-                <span className="pagina-info">
-                    Página {pagina} / {totalPaginas}
-                </span>
-
-                <ButtonAction
-                    text="Siguiente"
-                    disabled={pagina >= totalPaginas}
-                    onClick={() => setPagina((prev) => prev + 1)}
-                />
-            </div>
+      {/* Editar producto */}
+      {productoEditando && (
+        <div className="admin-products-card">
+          <CrearProducto
+            modo="editar"
+            productoInicial={productoEditando}
+            onFinish={handleFinEdicion}
+          />
+          <button
+            type="button"
+            className="btn-nl btn-nl-secondary admin-products-cancel"
+            onClick={() => setProductoEditando(null)}
+          >
+            Cancelar edición
+          </button>
         </div>
-    );
+      )}
+    </div>
+  );
 }

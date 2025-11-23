@@ -213,3 +213,76 @@ button:disabled,
     flex-direction: column;
   }
 }
+
+/******************************************************
+ * ESTILOS ESPECÍFICOS ADMIN USUARIOS
+ ******************************************************/
+
+/* Buscador por ID */
+.admin-search-user {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.admin-search-user input {
+  flex: 1;
+}
+
+/* Bloque resultado usuario por ID */
+.admin-user-result {
+  background: #000000;
+  border: 2px solid #007bff33;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+}
+
+/* Título pequeño encima del resultado */
+.admin-user-result h4 {
+  margin-bottom: 10px;
+  color: #007bff;
+  font-weight: bold;
+}
+
+/* Acciones Editar / Eliminar destacadas al buscar por ID */
+.admin-user-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* Botones resaltados */
+.admin-user-actions .admin-action-edit {
+  font-size: 15px;
+  padding: 8px 14px;
+}
+
+.admin-user-actions .admin-action-delete {
+  font-size: 15px;
+  padding: 8px 14px;
+}
+
+/* Separador visual entre crear y lista */
+.admin-separator {
+  border-top: 2px dashed #ccc;
+  margin: 30px 0;
+}
+
+/* Tabla más aireada */
+.admin-table td, 
+.admin-table th {
+  text-align: center;
+}
+
+/* efecto hover suave */
+.admin-table tr {
+  transition: background 0.2s ease;
+}
+
+.admin-venta-detalle {
+  background: #f4f6ff;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 15px;
+}

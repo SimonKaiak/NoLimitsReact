@@ -1,4 +1,3 @@
-// ✅ Ruta: src/pages/Login.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import styles from "../styles/login.module.css";
@@ -40,49 +39,45 @@ const onSubmit = async (e) => {
   if (!validar()) return;
 
   setSubmitting(true);
-  try {
-    // 1) Cargar usuarios
-    const usuarios = JSON.parse(localStorage.getItem("usuarios_nl") || "[]");
 
-    // 2) Buscar usuario por correo + pass
-    const encontrado = usuarios.find(
-      (u) =>
-        u.correo.toLowerCase().trim() === email.toLowerCase().trim() &&
-        u.contrasena.trim() === pass.trim()
+  try {
+    const res = await fetch(
+      "https://nolimits-backend-final.onrender.com/api/v1/auth/login",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          correo: email,
+          password: pass,
+        }),
+      }
     );
 
-    if (!encontrado) {
+    if (!res.ok) {
       setPassErr("* Correo o contraseña incorrectos.");
       return;
     }
 
-    // 3) Simular delay (opcional)
-    await new Promise((r) => setTimeout(r, 600));
-
-    // 4) Guardar sesión
-    const user = {
-      nombre: encontrado.nombre,
-      apellidos: encontrado.apellidos,
-      correo: encontrado.correo,
-    };
+    const data = await res.json();
 
     localStorage.setItem("nl_auth", "1");
-    localStorage.setItem("nl_user", JSON.stringify(user));
+    localStorage.setItem("nl_user", JSON.stringify(data));
+    localStorage.setItem("nl_role", data.rol);
 
-    // 5) Rol según el usuario encontrado
-    const rol = encontrado.rol || "USER";
-    localStorage.setItem("nl_role", rol);
-
-    if (rol === "ADMIN") {
+    if (data.rol === "ADMIN") {
       navigate("/admin");
     } else {
       navigate("/principal");
     }
+
+  } catch (error) {
+    console.error(error);
+    setPassErr("❌ Error al conectar con el servidor");
   } finally {
-    // Siempre se ejecuta, haya salido bien o mal
     setSubmitting(false);
   }
 };
+
 
   return (
     <main className={styles.page}>

@@ -1,174 +1,150 @@
 // Ruta: src/components/organisms/CrearUsuario.jsx
 
-import React, { useState } from "react";
-import InputText from "../atoms/InputText";
-import { ButtonAction } from "../atoms/ButtonAction";
-import {
-  crearUsuario,
-  editarUsuario,
-  ROL_ADMIN_ID,
-  ROL_CLIENTE_ID,
-} from "../../services/usuarios";
+import React, { useEffect, useState } from "react";
+import { crearUsuario, editarUsuario } from "../../services/usuarios";
 
-export default function CrearUsuario({ modo = "crear", usuario, onCerrar }) {
-  const [form, setForm] = useState({
-    nombre: usuario?.nombre || "",
-    apellidos: usuario?.apellidos || "",
-    correo: usuario?.correo || "",
-    telefono: usuario?.telefono || "",
+export default function CrearUsuario({
+  modo = "crear",         // "crear" | "editar"
+  usuarioInicial = null,  // objeto Usuario cuando editas
+  onFinish,               // callback después de crear/editar
+}) {
+  const [formData, setFormData] = useState({
+    nombre: "",
+    apellidos: "",
+    correo: "",
+    telefono: "",
     password: "",
-    // guardamos el id del rol en el form (como string)
-    rol: usuario?.rol?.id ? String(usuario.rol.id) : "",
+    rolId: "",
   });
 
-  const [errores, setErrores] = useState({});
+  const [error, setError] = useState("");
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    setErrores((prev) => ({ ...prev, [name]: "" }));
-  };
-
-  const validar = () => {
-    const err = {};
-    let ok = true;
-
-    if (!form.nombre.trim()) {
-      err.nombre = "El nombre es obligatorio";
-      ok = false;
+  useEffect(() => {
+    if (usuarioInicial) {
+      setFormData({
+        nombre: usuarioInicial.nombre ?? "",
+        apellidos: usuarioInicial.apellidos ?? "",
+        correo: usuarioInicial.correo ?? "",
+        telefono: usuarioInicial.telefono ?? "",
+        password: "", // no viene desde el back (WRITE_ONLY)
+        rolId: usuarioInicial.rol?.id ?? "",
+      });
+    } else {
+      setFormData({
+        nombre: "",
+        apellidos: "",
+        correo: "",
+        telefono: "",
+        password: "",
+        rolId: "",
+      });
     }
+  }, [usuarioInicial, modo]);
 
-    if (!form.apellidos.trim()) {
-      err.apellidos = "Los apellidos son obligatorios";
-      ok = false;
-    }
+  function handleChange(e) {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  }
 
-    if (!form.correo.includes("@")) {
-      err.correo = "Correo inválido";
-      ok = false;
-    }
-
-    if (!/^[0-9]*$/.test(form.telefono)) {
-      err.telefono = "Solo se permiten dígitos";
-      ok = false;
-    }
-
-    if (modo === "crear" && form.password.trim().length < 6) {
-      err.password = "El password debe tener mínimo 6 caracteres";
-      ok = false;
-    }
-
-    if (!form.rol) {
-      err.rol = "Selecciona un rol";
-      ok = false;
-    }
-
-    setErrores(err);
-    return ok;
-  };
-
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (!validar()) return;
+    setError("");
 
     const payload = {
-      nombre: form.nombre.trim(),
-      apellidos: form.apellidos.trim(),
-      correo: form.correo.trim(),
-      telefono: form.telefono.trim(),
-      // Usamos los IDs constantes para evitar confusiones:
-      // ROL_ADMIN_ID = 1, ROL_CLIENTE_ID = 2
-      rol: { id: Number(form.rol) },
+      nombre: formData.nombre,
+      apellidos: formData.apellidos,
+      correo: formData.correo,
+      telefono: Number(formData.telefono),
+      rol: { id: Number(formData.rolId) },
     };
 
-    if (modo === "crear") {
-      payload.password = form.password;
+    // En creación SIEMPRE mandamos password.
+    // En edición, solo si escribes algo.
+    if (modo === "crear" || formData.password.trim() !== "") {
+      payload.password = formData.password;
     }
 
     try {
-      if (modo === "crear") {
-        await crearUsuario(payload);
-        alert("Usuario creado con éxito!");
+      if (modo === "editar" && usuarioInicial?.id) {
+        await editarUsuario(usuarioInicial.id, payload);
       } else {
-        await editarUsuario(usuario.id, payload);
-        alert("Usuario editado correctamente!");
+        await crearUsuario(payload);
       }
 
-      onCerrar();
+      if (onFinish) onFinish();
     } catch (err) {
-      alert(err.message);
+      console.error(err);
+      setError("Error al guardar usuario: " + err.message);
     }
-  };
+  }
 
   return (
-    <div className="modal-bg">
-      <div className="modal-content">
-        <h2>{modo === "crear" ? "Crear Usuario" : "Editar Usuario"}</h2>
+    <form className="admin-form" onSubmit={handleSubmit}>
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
-        <form onSubmit={handleSubmit}>
-          <InputText
-            label="Nombre"
-            name="nombre"
-            value={form.nombre}
-            onChange={handleChange}
-            error={errores.nombre}
-          />
+      <div className="admin-form-row">
+        <input
+          type="text"
+          name="nombre"
+          placeholder="Nombre"
+          value={formData.nombre}
+          onChange={handleChange}
+          required
+        />
 
-          <InputText
-            label="Apellidos"
-            name="apellidos"
-            value={form.apellidos}
-            onChange={handleChange}
-            error={errores.apellidos}
-          />
+        <input
+          type="text"
+          name="apellidos"
+          placeholder="Apellidos"
+          value={formData.apellidos}
+          onChange={handleChange}
+          required
+        />
 
-          <InputText
-            label="Correo"
-            name="correo"
-            value={form.correo}
-            onChange={handleChange}
-            error={errores.correo}
-          />
+        <input
+          type="email"
+          name="correo"
+          placeholder="Correo"
+          value={formData.correo}
+          onChange={handleChange}
+          required
+        />
 
-          <InputText
-            label="Teléfono"
-            name="telefono"
-            value={form.telefono}
-            onChange={handleChange}
-            error={errores.telefono}
-          />
+        <input
+          type="number"
+          name="telefono"
+          placeholder="Teléfono"
+          value={formData.telefono}
+          onChange={handleChange}
+          required
+        />
 
-          {modo === "crear" && (
-            <InputText
-              label="Password (no se muestra nunca)"
-              type="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              error={errores.password}
-            />
-          )}
+        <input
+          type="password"
+          name="password"
+          placeholder={
+            modo === "crear"
+              ? "Contraseña (máx 10)"
+              : "Nueva contraseña (opcional)"
+          }
+          value={formData.password}
+          onChange={handleChange}
+          required={modo === "crear"}
+          maxLength={10}
+        />
 
-          <label>Rol</label>
-          <select name="rol" value={form.rol} onChange={handleChange}>
-            <option value="">Seleccione...</option>
-            {/* CLIENTE = ROL_CLIENTE_ID, ADMIN = ROL_ADMIN_ID */}
-            <option value={String(ROL_CLIENTE_ID)}>CLIENTE</option>
-            <option value={String(ROL_ADMIN_ID)}>ADMIN</option>
-          </select>
-          {errores.rol && <p className="error-msg">{errores.rol}</p>}
+        <input
+          type="number"
+          name="rolId"
+          placeholder="ID rol (obligatorio)"
+          value={formData.rolId}
+          onChange={handleChange}
+          required
+        />
 
-          <div className="modal-buttons">
-            <ButtonAction type="submit" text="Guardar" />
-            <ButtonAction text="Cancelar" onClick={onCerrar} />
-          </div>
-        </form>
+        <button type="submit">
+          {modo === "editar" ? "Guardar cambios" : "Guardar"}
+        </button>
       </div>
-    </div>
+    </form>
   );
 }

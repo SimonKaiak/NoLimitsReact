@@ -1,182 +1,240 @@
-import React, { useEffect, useState } from "react";
-import { ButtonAction } from "../../components/atoms/ButtonAction";
-import CrearUsuario from "../../components/organisms/CrearUsuario";
-import DetalleUsuario from "../../components/organisms/DetalleUsuario";
+// Ruta: src/pages/admin/AdminUsuarioList.jsx
+
+import React, { useState } from "react";
 import {
-  listarUsuarios,
-  eliminarUsuario,
   obtenerUsuario,
+  eliminarUsuario,
+  obtenerMisCompras,
 } from "../../services/usuarios";
+import CrearUsuario from "../../components/organisms/CrearUsuario";
 import "../../styles/adminBase.css";
 
 export default function AdminUsuarioList() {
-  const [usuarios, setUsuarios] = useState([]);
-  const [busqueda, setBusqueda] = useState("");        // filtro aplicado
-  const [busquedaTemp, setBusquedaTemp] = useState(""); // lo que escribe el usuario
-  const [pagina, setPagina] = useState(1);
-  const [totalPaginas, setTotalPaginas] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [busquedaId, setBusquedaId] = useState("");
+  const [resultadoBusqueda, setResultadoBusqueda] = useState(null);
+  const [error, setError] = useState("");
+  const [usuarioEditando, setUsuarioEditando] = useState(null);
+  const [compras, setCompras] = useState([]);
+  const [loadingCompras, setLoadingCompras] = useState(false);
+  const [errorCompras, setErrorCompras] = useState("");
 
-  const [modalEditar, setModalEditar] = useState(null);
-  const [modalDetalle, setModalDetalle] = useState(null);
+    async function doBuscarPorId(id) {
+        if (!id) return;
+        setError("");
+        setResultadoBusqueda(null);
+        setUsuarioEditando(null);
 
-  useEffect(() => {
-    cargarUsuarios();
-  }, [pagina, busqueda]);
+        // Limpia compras al cambiar de usuario buscado
+        setCompras([]);
+        setErrorCompras("");
+        setLoadingCompras(false);
 
-  async function cargarUsuarios() {
-    setLoading(true);
-    try {
-      const data = await listarUsuarios(pagina, busqueda);
-      setUsuarios(data.contenido || []);
-      setTotalPaginas(data.totalPaginas || 1);
-    } catch (err) {
-      console.error(err);
-      alert("❌ Error cargando usuarios");
+        try {
+            const u = await obtenerUsuario(id);
+            setResultadoBusqueda(u);
+        } catch (e) {
+            console.error(e);
+            setError("No se encontró el usuario: " + e.message);
+        }
     }
-    setLoading(false);
+
+  async function handleBuscarPorId(e) {
+    e.preventDefault();
+    await doBuscarPorId(busquedaId);
   }
 
-  const handleEliminar = async (id) => {
-    if (!window.confirm("¿Eliminar usuario?")) return;
-
+  async function handleEliminar(id) {
+    if (!window.confirm("¿Eliminar este usuario?")) return;
     try {
       await eliminarUsuario(id);
-      setUsuarios((prev) => prev.filter((u) => u.id !== id));
-      alert("Usuario eliminado");
-    } catch (err) {
-      alert("❌ No se puede eliminar (ventas asociadas)");
+      setResultadoBusqueda(null);
+      setUsuarioEditando(null);
+    } catch (e) {
+      alert("Error al eliminar: " + e.message);
     }
-  };
+  }
 
-    const abrirEditar = async (fila) => {
-        const usuario = await obtenerUsuario(fila.id);
-        setModalEditar(usuario);
-    };
+    async function handleVerCompras(usuarioId) {
+    setLoadingCompras(true);
+    setErrorCompras("");
+    setCompras([]);
 
-    const abrirDetalle = async (fila) => {
-        const usuario = await obtenerUsuario(fila.id);
-        setModalDetalle(usuario);
-    };
-
-    // LOADER
-    if (loading) {
-        return (
-        <div className="loader-container">
-            <div className="loader"></div>
-            <p>Cargando usuarios...</p>
-        </div>
-        );
+    try {
+      const data = await obtenerMisCompras(usuarioId);
+      // Puede venir como lista [] o vacío
+      setCompras(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+      setErrorCompras("Error al cargar las compras: " + e.message);
+    } finally {
+      setLoadingCompras(false);
     }
+  }
 
-    return (
-        <div className="admin-wrapper">
-        <h1 className="admin-title">Gestionar Usuarios</h1>
 
-        {/* Buscador */}
-        <div className="admin-form">
-            <input
-            type="text"
-            className="admin-input"
-            placeholder="Buscar por nombre o correo..."
-            value={busquedaTemp}
-            onChange={(e) => setBusquedaTemp(e.target.value)}
-            />
-            <ButtonAction
-            text="Buscar"
-            onClick={() => {
-                setBusqueda(busquedaTemp); // aplica filtro (nombre o correo)
-                setPagina(1);
-            }}
-            />
-        </div>
+  function handleFinEdicion() {
+    setUsuarioEditando(null);
+    if (busquedaId) {
+      doBuscarPorId(busquedaId);
+    }
+  }
 
-        {/* Mensaje cuando no hay resultados */}
-        {usuarios.length === 0 && (
-            <p className="admin-empty">
-            {busqueda
-                ? `No se encontraron usuarios para "${busqueda}".`
-                : "No hay usuarios registrados."}
-            </p>
-        )}
+  return (
+    <div className="admin-wrapper">
+      <h2 className="admin-title">Administrar usuarios</h2>
 
-        {/* Tabla */}
-        <table className="admin-table">
-            <thead>
-            <tr>
-                <th>ID</th>
-                <th>Nombre Completo</th>
-                <th>Correo</th>
-                <th>Rol</th>
-                <th>Comuna / Región</th>
-                <th>Ventas</th>
-                <th>Acciones</th>
-            </tr>
-            </thead>
-
-            <tbody>
-            {usuarios.map((u) => (
-                <tr key={u.id}>
-                <td>{u.id}</td>
-                <td>{u.nombreCompleto}</td>
-                <td>{u.correo}</td>
-                <td>{u.rol?.nombre}</td>
-                <td>
-                    {u.comuna?.nombre} - {u.region?.nombre}
-                </td>
-                <td>{u.ventasAsociadas?.length ?? 0}</td>
-                <td className="admin-actions">
-                    <ButtonAction text="Ver" onClick={() => abrirDetalle(u)} />
-                    <ButtonAction text="Editar" onClick={() => abrirEditar(u)} />
-                    <ButtonAction
-                    text="Eliminar"
-                    onClick={() => handleEliminar(u.id)}
-                    />
-                </td>
-                </tr>
-            ))}
-            </tbody>
-        </table>
-
-        {/* Paginación */}
-        <div className="admin-pagination">
-            <ButtonAction
-            text="Anterior"
-            disabled={pagina <= 1}
-            onClick={() => setPagina((p) => p - 1)}
-            />
-
-            <span className="admin-page-info">
-            Página {pagina} / {totalPaginas}
-            </span>
-
-            <ButtonAction
-            text="Siguiente"
-            disabled={pagina >= totalPaginas}
-            onClick={() => setPagina((p) => p + 1)}
-            />
-        </div>
-
-        {/* MODAL EDITAR */}
-        {modalEditar && (
-        <CrearUsuario
-            modo="editar"
-            usuario={modalEditar}
-            onCerrar={() => {
-            setModalEditar(null);
-            cargarUsuarios();
-            }}
+      {/* Buscar por ID */}
+      <form className="admin-form" onSubmit={handleBuscarPorId}>
+        <input
+          type="number"
+          className="admin-input"
+          value={busquedaId}
+          onChange={(e) => setBusquedaId(e.target.value)}
+          placeholder="Buscar usuario por ID"
         />
-        )}
+        <button type="submit" className="admin-btn">
+          Buscar
+        </button>
+      </form>
 
+      {error && <p style={{ color: "red", marginBottom: "10px" }}>{error}</p>}
 
-        {/* MODAL DETALLE */}
-        {modalDetalle && (
-            <DetalleUsuario
-            usuario={modalDetalle}
-            onCerrar={() => setModalDetalle(null)}
-            />
-        )}
+      {/* Resultado de la búsqueda (solo aparece si hay usuario) */}
+      {resultadoBusqueda && (
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre completo</th>
+              <th>Correo</th>
+              <th>Teléfono</th>
+              <th>Rol</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{resultadoBusqueda.id}</td>
+              <td>
+                {resultadoBusqueda.nombre} {resultadoBusqueda.apellidos}
+              </td>
+              <td>{resultadoBusqueda.correo}</td>
+              <td>{resultadoBusqueda.telefono}</td>
+              <td>{resultadoBusqueda.rol?.nombre}</td>
+              <td>
+                <div className="admin-actions">
+                    <button
+                    type="button"
+                    className="admin-action-btn admin-action-edit"
+                    onClick={() => setUsuarioEditando(resultadoBusqueda)}
+                    >
+                    Editar
+                    </button>
+                    <button
+                    type="button"
+                    className="admin-action-btn admin-action-delete"
+                    onClick={() => handleEliminar(resultadoBusqueda.id)}
+                    >
+                    Eliminar
+                    </button>
+                    <button
+                    type="button"
+                    className="admin-action-btn admin-btn"
+                    onClick={() => handleVerCompras(resultadoBusqueda.id)}
+                    >
+                    Ver compras
+                    </button>
+                </div>
+                </td>
+
+            </tr>
+          </tbody>
+        </table>
+      )}
+
+      {/* ================= COMPRAS DEL USUARIO ================= */}
+
+{loadingCompras && (
+  <p className="admin-msg">Cargando compras...</p>
+)}
+
+{errorCompras && (
+  <p style={{ color: "red" }}>{errorCompras}</p>
+)}
+
+{!loadingCompras && compras.length > 0 && (
+  <div style={{ marginTop: "25px" }}>
+    <h3 className="admin-title" style={{ fontSize: "20px" }}>
+      Compras realizadas
+    </h3>
+
+    <table className="admin-table">
+      <thead>
+        <tr>
+          <th>ID Venta</th>
+          <th>Fecha</th>
+          <th>Hora</th>
+          <th>Total</th>
+          <th>Método de pago</th>
+        </tr>
+      </thead>
+      <tbody>
+        {compras.map((venta) => (
+          <tr key={venta.id ?? venta.idVenta}>
+            <td>{venta.id ?? venta.idVenta}</td>
+            <td>{venta.fechaCompra}</td>
+            <td>{venta.horaCompra}</td>
+            <td>${venta.totalVenta}</td>
+            <td>
+              {venta.metodoPagoModel?.nombre || venta.metodoPago?.nombre}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+
+{!loadingCompras && compras.length === 0 && resultadoBusqueda && !errorCompras && (
+  <p className="admin-msg">
+    Este usuario no registra compras.
+  </p>
+)}
+
+      {/* Crear usuario */}
+      <div style={{ marginTop: "25px" }}>
+        <h3 className="admin-title" style={{ fontSize: "22px", marginBottom: "15px" }}>
+          Crear usuario
+        </h3>
+        <CrearUsuario
+          modo="crear"
+          onFinish={() => {
+            if (busquedaId) doBuscarPorId(busquedaId);
+          }}
+        />
+      </div>
+
+      {/* Editar usuario (solo cuando se pulsa Editar) */}
+      {usuarioEditando && (
+        <div style={{ marginTop: "25px" }}>
+          <h3 className="admin-title" style={{ fontSize: "22px", marginBottom: "15px" }}>
+            Editar usuario
+          </h3>
+          <CrearUsuario
+            modo="editar"
+            usuarioInicial={usuarioEditando}
+            onFinish={handleFinEdicion}
+          />
+          <button
+            type="button"
+            className="admin-btn-secondary"
+            style={{ marginTop: "10px" }}
+            onClick={() => setUsuarioEditando(null)}
+          >
+            Cancelar edición
+          </button>
         </div>
-    );
+      )}
+    </div>
+  );
 }
