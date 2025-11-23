@@ -1,0 +1,30 @@
+.catalogos-title {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+}
+
+.catalogos-sub {
+    color: #444;
+    margin-bottom: 20px;
+}
+
+.catalogos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.submenu-catalogos {
+  margin-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.submenu-catalogos button {
+  font-size: 0.9rem;
+  padding: 6px 10px;
+}

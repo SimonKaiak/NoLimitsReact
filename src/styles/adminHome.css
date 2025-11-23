@@ -1,0 +1,18 @@
+/* =======================
+   Estilos de Admin Home
+========================= */
+
+.admin-home {
+  padding: 20px;
+}
+
+.admin-home h2 {
+  margin-bottom: 10px;
+  font-size: 26px;
+  color: white;
+}
+
+.admin-home p {
+  font-size: 16px;
+  color: white;
+}

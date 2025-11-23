@@ -1,0 +1,103 @@
+/* ============================
+   CONTENEDOR PRINCIPAL
+============================ */
+.mis-compras-wrapper {
+  max-width: 900px;
+  margin: 40px auto;
+  background: #111;
+  padding: 30px;
+  border-radius: 20px;
+  border: 2px solid #ff25d0;
+  color: #fff;
+  box-shadow: 0 0 10px #ff25d044;
+}
+
+/* Título */
+.mis-compras-title {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: #ff25d0;
+}
+
+/* ============================
+   TARJETAS DE COMPRA
+============================ */
+.compra-card {
+  background: #1a1a1a;
+  padding: 20px;
+  border-radius: 16px;
+  margin-bottom: 25px;
+  border: 1px solid #333;
+  transition: 0.2s ease-in-out;
+}
+
+.compra-card:hover {
+  border-color: #ff25d0;
+  transform: translateY(-2px);
+}
+
+/* Header */
+.compra-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.compra-header h2 {
+  color: #ff25d0;
+  margin: 0;
+}
+
+/* Detalles */
+.compra-detalle p {
+  margin: 3px 0;
+}
+
+/* ============================
+   LISTA DE PRODUCTOS
+============================ */
+.lista-productos {
+  list-style: none;
+  padding: 0;
+  margin-top: 10px;
+}
+
+.item-producto {
+  background: #222;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #333;
+}
+
+.item-producto p {
+  margin: 2px 0;
+}
+
+/* ============================
+   TOTAL COMPRA
+============================ */
+.total-compra {
+  margin-top: 10px;
+  font-size: 1.2rem;
+  text-align: right;
+  font-weight: bold;
+  color: #ff25d0;
+}
+
+/* ============================
+   MENSAJES
+============================ */
+.mensaje {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 1.1rem;
+  opacity: 0.8;
+}
+
+.loading-text {
+  text-align: center;
+  font-size: 1.2rem;
+  padding: 40px;
+}

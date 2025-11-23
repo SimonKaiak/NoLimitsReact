@@ -1,0 +1,215 @@
+/******************************************************
+ *  ESTILOS BASE PARA TODOS LOS MANTENEDORES ADMIN
+ *  (Tipos, Clasificaciones, Estados, Géneros, etc.)
+ ******************************************************/
+
+/* --- Layout general --- */
+.admin-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+}
+
+/* --- Títulos --- */
+.admin-title {
+  text-align: center;
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 25px;
+  color: #333;
+}
+
+/* --- Formularios --- */
+.admin-form {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.admin-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+.admin-input:focus {
+  border-color: #0074ff;
+  outline: none;
+}
+
+/* --- Botones estándar --- */
+.admin-btn,
+.admin-btn-secondary {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: 0.2s;
+}
+
+.admin-btn {
+  background: #007bff;
+  color: white;
+}
+
+.admin-btn:hover {
+  background: #005fcc;
+}
+
+.admin-btn-secondary {
+  background: #666;
+  color: white;
+}
+
+.admin-btn-secondary:hover {
+  background: #444;
+}
+
+/* --- Tabla --- */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  background: white;
+}
+
+.admin-table th {
+  background: #007bff;
+  color: white;
+  padding: 12px;
+  font-size: 16px;
+}
+
+.admin-table td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.admin-table tr:hover {
+  background: #f5f5f5;
+}
+
+/* --- Acciones dentro de la tabla --- */
+.admin-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.admin-action-btn {
+  padding: 6px 10px;
+  font-size: 14px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+.admin-action-edit {
+  background: #ffa600;
+  color: #fff;
+}
+
+.admin-action-edit:hover {
+  background: #d48800;
+}
+
+.admin-action-delete {
+  background: #d9534f;
+  color: white;
+}
+
+.admin-action-delete:hover {
+  background: #b52b27;
+}
+
+/* --- Mensajes dentro de tablas --- */
+.admin-msg {
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+  color: #555;
+}
+
+/* --- Paginación --- */
+.admin-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-top: 25px;
+}
+
+.admin-page-info {
+  font-weight: bold;
+}
+
+/* --- Botones de paginación --- */
+.admin-page-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #007bff;
+  color: white;
+  border: none;
+  transition: 0.2s;
+}
+
+.admin-page-btn:disabled {
+  background: #a0a0a0;
+  cursor: not-allowed;
+}
+
+.admin-page-btn:hover:not(:disabled) {
+  background: #005fcc;
+}
+
+/* 🔥 ARREGLA BOTONES QUE NO FUNCIONAN EN PANEL ADMIN */
+.admin-wrapper,
+.admin-container,
+.admin-form,
+.admin-table,
+.admin-actions,
+.admin-pagination,
+.modal-admin,
+button,
+input,
+textarea,
+select,
+label {
+  pointer-events: auto !important;
+}
+
+/* 🔥 Asegura que nada tape la parte del admin */
+body.route-admin * {
+  z-index: 10;
+}
+
+body.route-admin .admin-wrapper {
+  z-index: 50 !important;
+}
+
+button:disabled,
+.admin-page-btn:disabled {
+  pointer-events: none !important;
+  opacity: 0.6 !important;
+}
+
+/**********************************************
+ * RESPONSIVE
+ **********************************************/
+@media (max-width: 700px) {
+  .admin-form {
+    flex-direction: column;
+  }
+
+  .admin-actions {
+    flex-direction: column;
+  }
+}
