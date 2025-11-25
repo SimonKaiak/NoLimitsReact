@@ -18,25 +18,25 @@ export default function AdminUsuarioList() {
   const [loadingCompras, setLoadingCompras] = useState(false);
   const [errorCompras, setErrorCompras] = useState("");
 
-    async function doBuscarPorId(id) {
-        if (!id) return;
-        setError("");
-        setResultadoBusqueda(null);
-        setUsuarioEditando(null);
+  async function doBuscarPorId(id) {
+    if (!id) return;
+    setError("");
+    setResultadoBusqueda(null);
+    setUsuarioEditando(null);
 
-        // Limpia compras al cambiar de usuario buscado
-        setCompras([]);
-        setErrorCompras("");
-        setLoadingCompras(false);
+    // Limpia compras al cambiar de usuario buscado
+    setCompras([]);
+    setErrorCompras("");
+    setLoadingCompras(false);
 
-        try {
-            const u = await obtenerUsuario(id);
-            setResultadoBusqueda(u);
-        } catch (e) {
-            console.error(e);
-            setError("No se encontró el usuario: " + e.message);
-        }
+    try {
+      const u = await obtenerUsuario(id);
+      setResultadoBusqueda(u);
+    } catch (e) {
+      console.error(e);
+      setError("No se encontró el usuario: " + e.message);
     }
+  }
 
   async function handleBuscarPorId(e) {
     e.preventDefault();
@@ -54,14 +54,13 @@ export default function AdminUsuarioList() {
     }
   }
 
-    async function handleVerCompras(usuarioId) {
+  async function handleVerCompras(usuarioId) {
     setLoadingCompras(true);
     setErrorCompras("");
     setCompras([]);
 
     try {
       const data = await obtenerMisCompras(usuarioId);
-      // Puede venir como lista [] o vacío
       setCompras(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error(e);
@@ -70,7 +69,6 @@ export default function AdminUsuarioList() {
       setLoadingCompras(false);
     }
   }
-
 
   function handleFinEdicion() {
     setUsuarioEditando(null);
@@ -97,9 +95,11 @@ export default function AdminUsuarioList() {
         </button>
       </form>
 
-      {error && <p style={{ color: "red", marginBottom: "10px" }}>{error}</p>}
+      {error && (
+        <p style={{ color: "red", marginBottom: "10px" }}>{error}</p>
+      )}
 
-      {/* Resultado de la búsqueda (solo aparece si hay usuario) */}
+      {/* Resultado de la búsqueda */}
       {resultadoBusqueda && (
         <table className="admin-table">
           <thead>
@@ -123,30 +123,29 @@ export default function AdminUsuarioList() {
               <td>{resultadoBusqueda.rol?.nombre}</td>
               <td>
                 <div className="admin-actions">
-                    <button
+                  <button
                     type="button"
                     className="admin-action-btn admin-action-edit"
                     onClick={() => setUsuarioEditando(resultadoBusqueda)}
-                    >
+                  >
                     Editar
-                    </button>
-                    <button
+                  </button>
+                  <button
                     type="button"
                     className="admin-action-btn admin-action-delete"
                     onClick={() => handleEliminar(resultadoBusqueda.id)}
-                    >
+                  >
                     Eliminar
-                    </button>
-                    <button
+                  </button>
+                  <button
                     type="button"
                     className="admin-action-btn admin-btn"
                     onClick={() => handleVerCompras(resultadoBusqueda.id)}
-                    >
+                  >
                     Ver compras
-                    </button>
+                  </button>
                 </div>
-                </td>
-
+              </td>
             </tr>
           </tbody>
         </table>
@@ -154,70 +153,58 @@ export default function AdminUsuarioList() {
 
       {/* ================= COMPRAS DEL USUARIO ================= */}
 
-{loadingCompras && (
-  <p className="admin-msg">Cargando compras...</p>
-)}
+      {loadingCompras && <p className="admin-msg">Cargando compras...</p>}
 
-{errorCompras && (
-  <p style={{ color: "red" }}>{errorCompras}</p>
-)}
+      {errorCompras && <p style={{ color: "red" }}>{errorCompras}</p>}
 
-{!loadingCompras && compras.length > 0 && (
-  <div style={{ marginTop: "25px" }}>
-    <h3 className="admin-title" style={{ fontSize: "20px" }}>
-      Compras realizadas
-    </h3>
+      {!loadingCompras && compras.length > 0 && (
+        <div style={{ marginTop: "25px" }}>
+          <h3 className="admin-title" style={{ fontSize: "20px" }}>
+            Compras realizadas
+          </h3>
 
-    <table className="admin-table">
-      <thead>
-        <tr>
-          <th>ID Venta</th>
-          <th>Fecha</th>
-          <th>Hora</th>
-          <th>Total</th>
-          <th>Método de pago</th>
-        </tr>
-      </thead>
-      <tbody>
-        {compras.map((venta) => (
-          <tr key={venta.id ?? venta.idVenta}>
-            <td>{venta.id ?? venta.idVenta}</td>
-            <td>{venta.fechaCompra}</td>
-            <td>{venta.horaCompra}</td>
-            <td>${venta.totalVenta}</td>
-            <td>
-              {venta.metodoPagoModel?.nombre || venta.metodoPago?.nombre}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-)}
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>ID Venta</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Total</th>
+                <th>Método de pago</th>
+              </tr>
+            </thead>
+            <tbody>
+              {compras.map((venta) => (
+                <tr key={venta.id ?? venta.idVenta}>
+                  <td>{venta.id ?? venta.idVenta}</td>
+                  <td>{venta.fechaCompra}</td>
+                  <td>{venta.horaCompra}</td>
+                  <td>${venta.totalVenta}</td>
+                  <td>
+                    {venta.metodoPagoModel?.nombre ||
+                      venta.metodoPago?.nombre}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-{!loadingCompras && compras.length === 0 && resultadoBusqueda && !errorCompras && (
-  <p className="admin-msg">
-    Este usuario no registra compras.
-  </p>
-)}
-
-      {/* Crear usuario */}
-      <div style={{ marginTop: "25px" }}>
-        <h3 className="admin-title" style={{ fontSize: "22px", marginBottom: "15px" }}>
-          Crear usuario
-        </h3>
-        <CrearUsuario
-          modo="crear"
-          onFinish={() => {
-            if (busquedaId) doBuscarPorId(busquedaId);
-          }}
-        />
-      </div>
+      {!loadingCompras &&
+        compras.length === 0 &&
+        resultadoBusqueda &&
+        !errorCompras && (
+          <p className="admin-msg">Este usuario no registra compras.</p>
+        )}
 
       {/* Editar usuario (solo cuando se pulsa Editar) */}
       {usuarioEditando && (
         <div style={{ marginTop: "25px" }}>
-          <h3 className="admin-title" style={{ fontSize: "22px", marginBottom: "15px" }}>
+          <h3
+            className="admin-title"
+            style={{ fontSize: "22px", marginBottom: "15px" }}
+          >
             Editar usuario
           </h3>
           <CrearUsuario

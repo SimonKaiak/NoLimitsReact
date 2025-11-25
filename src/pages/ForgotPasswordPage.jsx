@@ -1,3 +1,18 @@
+// Ruta: src/pages/ForgotPasswordPage.jsx
+/**
+ * Página: ForgotPasswordPage
+ * -------------------------------------------------------
+ * Esta página muestra la sección completa para recuperar
+ * la contraseña:
+ *
+ *  - Navbar superior
+ *  - Sección "ForgotPasswordSection" (organism)
+ *  - Footer inferior
+ *
+ * Usa la clase "nl-full-page-layout" para respetar el
+ * layout global del sistema NoLimits.
+ */
+
 import React from "react";
 import { ForgotPasswordSection } from "../components/organisms/ForgotPasswordSection";
 import "../styles/olvideMiContrasenia.css";
@@ -7,12 +22,15 @@ import Navbar from "../components/organisms/Navbar.jsx";
 export const ForgotPasswordPage = () => {
     return (
         <div className="nl-full-page-layout no-dark-overlay">
-            <Navbar /> {/* Agrega la barra superior */}
             
-            {/* El contenido principal (la caja del formulario) */}
+            {/* Navbar superior */}
+            <Navbar />
+
+            {/* Contenido principal */}
             <ForgotPasswordSection />
 
-            <Footer /> {/* Agrega la barra inferior */}
+            {/* Footer inferior */}
+            <Footer />
         </div>
     );
 };

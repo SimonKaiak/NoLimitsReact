@@ -1,131 +1,139 @@
-// Ruta: src/components/molecules/ForgotPasswordForm.jsx
-
+// Se importa React y useState para manejar estados dentro del componente
 import React, { useState } from "react";
+
+// Se importan componentes reutilizables del proyecto
 import { InputEmail } from "../atoms/InputEmail";
 import { ErrorMsg } from "../atoms/ErrorMsg";
 import { ButtonSubmit } from "../atoms/ButtonSubmit";
+
+// useNavigate permite redirigir a otras páginas
 import { useNavigate } from "react-router-dom";
+
+// Función del backend que valida si un correo existe en la base de datos
 import { verificarCorreoRegistrado } from "../../services/usuarios";
 
 /**
  * Componente ForgotPasswordForm
- * 
- * Este componente muestra un formulario que permite al usuario ingresar
- * su correo electrónico para recibir instrucciones de recuperación de contraseña.
- * 
- * Este contiene validaciones de formato de correo y verificación de existencia del usuario
- * consultando directamente al backend.
+ *
+ * Este componente muestra un formulario donde el usuario ingresa su correo electrónico.
+ * El sistema valida el formato y consulta al backend para verificar si el correo pertenece
+ * a una cuenta registrada.
+ *
+ * Si todo es correcto, se simula el envío de un enlace de recuperación y se redirige al login.
  */
-
 export const ForgotPasswordForm = () => {
+  // Permite redirigir al usuario a otra página
+  const navigate = useNavigate();
 
-    // Para DOM Enrutamiento.
-    const navigate = useNavigate();
+  // Valor actual del correo electrónico ingresado
+  const [email, setEmail] = useState("");
 
-    // Estado que almacena el valor actual del campo de correo electrónico
-    const [email, setEmail] = useState("");
+  // Mensaje de error asociado a validaciones
+  const [errorMsg, setErrorMsg] = useState("");
 
-    // Estado que guarda el mensaje de error en caso de validación incorrecta
-    const [errorMsg, setErrorMsg] = useState("");
+  // Controla si el sistema está validando el correo (animación, deshabilitar botón, etc.)
+  const [loading, setLoading] = useState(false);
 
-    // Estado para controlar carga mientras se valida en backend
-    const [loading, setLoading] = useState(false);
+  /**
+   * handleSubmit
+   *
+   * Se ejecuta cuando el usuario envía el formulario.
+   * Realiza tres validaciones:
+   *  1. El correo no puede estar vacío.
+   *  2. El formato debe ser válido.
+   *  3. El correo debe existir en la base de datos (validación en backend).
+   */
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Evita que la página se recargue
 
-    /**
-     * Manejador del evento "submit" del formulario.
-     * Se encarga de validar el correo ingresado y verificar si pertenece a un usuario registrado.
-     * 
-     * @param {Event} e - Evento de envío del formulario.
-     */
-    const handleSubmit = async (e) => {
-        e.preventDefault(); // Evita el comportamiento por defecto del formulario (recargar la página)
+    // Expresión regular sencilla para validar formato de correo
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-        // Expresión regular básica para validar el formato de correo electrónico.
-        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    // Validación: campo vacío
+    if (!email) {
+      setErrorMsg("Ingrese un correo electrónico.");
+      return;
+    }
 
-        // Primera validación: campo vacío.
-        if (!email) {
-            setErrorMsg("Ingrese un correo electrónico.");
-            return;
-        }
+    // Validación: formato incorrecto
+    if (!isEmail) {
+      setErrorMsg("Formato de correo inválido.");
+      return;
+    }
 
-        // Segunda validación: formato incorrecto.
-        if (!isEmail) {
-            setErrorMsg("Formato de correo inválido.");
-            return;
-        }
+    // Todo correcto hasta ahora
+    setErrorMsg("");
+    setLoading(true);
 
-        setErrorMsg("");
-        setLoading(true);
+    try {
+      // Validación con backend: verifica si el correo existe
+      await verificarCorreoRegistrado(email);
 
-        try {
-            // Tercera validación: existencia del usuario en la base de datos (backend).
-            await verificarCorreoRegistrado(email);
+      // Simula el envío de un correo real
+      alert(`Enviamos un enlace de recuperación a: ${email}`);
 
-            // Simula el envío del correo de recuperación.
-            alert(`Enviamos un enlace de recuperación a: ${email}`);
+      // Redirección después de unos segundos
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
+    } catch (err) {
+      // Si el backend responde "NOT_FOUND"
+      if (err.message === "NOT_FOUND") {
+        setErrorMsg("El correo no está asociado a ninguna cuenta registrada.");
+      } else {
+        setErrorMsg("Ocurrió un error al validar el correo. Inténtalo más tarde.");
+      }
+    } finally {
+      setLoading(false); // Siempre se ejecuta, incluso si hubo error
+    }
+  };
 
-            // Después de 1.5 segundos, redirige a la página de login.
-            setTimeout(() => {
-                navigate("/login");
-            }, 1500);
+  /**
+   * handleChange
+   *
+   * Se ejecuta cuando el usuario escribe en el input.
+   * Actualiza el correo y elimina cualquier mensaje de error previo.
+   */
+  const handleChange = (e) => {
+    setEmail(e.target.value);
+    if (errorMsg) setErrorMsg(""); // Limpia el error mientras el usuario escribe
+  };
 
-        } catch (err) {
-            if (err.message === "NOT_FOUND") {
-                setErrorMsg("El correo no está asociado a ninguna cuenta registrada.");
-            } else {
-                setErrorMsg("Ocurrió un error al validar el correo. Inténtalo más tarde.");
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
+  /**
+   * Render del formulario
+   *
+   * Incluye:
+   * - Texto explicativo
+   * - Campo para ingresar el correo
+   * - Mensaje de error si existe
+   * - Botón para confirmar
+   */
+  return (
+    <form id="formOlvide" onSubmit={handleSubmit} noValidate>
+      {/* Texto que explica el proceso al usuario */}
+      <strong>
+        Ingresa tu correo electrónico y te enviaremos las instrucciones para una nueva contraseña. <br />
+        Una vez hecho, se te dirigirá a la página principal.
+      </strong>
 
-    /**
-     * Manejador para el evento onChange del campo de correo.
-     * Actualiza el estado "email" cada vez que el usuario escribe.
-     * Si había un mensaje de error previo, lo limpia automáticamente.
-     */
-    const handleChange = (e) => {
-        setEmail(e.target.value);
-        if (errorMsg) setErrorMsg(""); // Limpia el error al escribir nuevamente.
-    };
+      <footer>
+        {/* Campo de correo + mensaje de error */}
+        <div className="field">
+          <InputEmail
+            value={email}
+            onChange={handleChange}
+            hasError={!!errorMsg} // true si existe error
+          />
+          <ErrorMsg message={errorMsg} />
+        </div>
 
-    /**
-     * Renderizado del formulario.
-     * Esto incluye:
-     * - Un texto explicativo.
-     * - Campo para ingresar correo.
-     * - Mensaje de error en caso de validación incorrecta.
-     * - Botón de envío para continuar.
-     */
-
-    return (
-       <form id="formOlvide" onSubmit={handleSubmit} noValidate>
-        {/* Texto informativo para el usuario */}
-        <strong>
-            Ingresa tu correo electrónico y te enviaremos las instrucciones para una nueva contraseña. <br />
-            Una vez hecho, se te dirigirá a la página principal.
-        </strong>
-
-        <footer>
-            {/* Campo de correo electrónico con su mensaje de error */}
-            <div className="field">
-                <InputEmail 
-                    value={email} 
-                    onChange={handleChange} 
-                    hasError={!!errorMsg} 
-                />
-                <ErrorMsg message={errorMsg}/>
-            </div>
-
-            {/* Botón para enviar el formulario */}
-            <ButtonSubmit 
-                text={loading ? "Verificando..." : "Continuar"} 
-                className="nl-forgot-btn"
-                disabled={loading}
-            />
-        </footer>
-       </form> 
-    );
+        {/* Botón de envío: cambia su texto si está cargando */}
+        <ButtonSubmit
+          text={loading ? "Verificando..." : "Continuar"}
+          className="nl-forgot-btn"
+          disabled={loading}
+        />
+      </footer>
+    </form>
+  );
 };

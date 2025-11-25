@@ -1,35 +1,77 @@
 // Ruta: src/pages/admin/AdminTipoEmpresaList.jsx
+
 import React, { useEffect, useState } from "react";
 import { ButtonAction } from "../../components/atoms/ButtonAction.jsx";
 import CrearTipoEmpresa from "../../components/organisms/CrearTipoEmpresa.jsx";
+
 import {
   listarTiposEmpresa,
   eliminarTipoEmpresa,
   obtenerTipoEmpresa,
 } from "../../services/tiposEmpresa.js";
+
 import "../../styles/adminBase.css";
 
+/**
+ * AdminTipoEmpresaList
+ *
+ * Módulo de administración para gestionar los Tipos de Empresa.
+ * Permite:
+ *  - Listar tipos de empresa paginados
+ *  - Buscar por nombre
+ *  - Crear un nuevo tipo de empresa
+ *  - Editar un tipo existente
+ *  - Eliminar un tipo existente
+ *
+ * El componente usa un sistema de búsqueda "confirmada":
+ * El usuario escribe en el input, pero la búsqueda real solo se aplica
+ * cuando se presiona el botón "Buscar" o Enter.
+ */
 export default function AdminTipoEmpresaList() {
+  /** Lista actual mostrada en la tabla */
   const [tipos, setTipos] = useState([]);
-  const [busqueda, setBusqueda] = useState("");   // lo que escribes
-  const [filtro, setFiltro] = useState("");       // lo que realmente se aplica
+
+  /** Texto que escribe el usuario en el input */
+  const [busqueda, setBusqueda] = useState("");
+
+  /** Filtro REAL aplicado al backend */
+  const [filtro, setFiltro] = useState("");
+
+  /** Estados para paginación */
   const [pagina, setPagina] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
+
+  /** Indica si se está cargando información */
   const [loading, setLoading] = useState(false);
 
+  /** Datos para abrir el modal (crear/editar) */
   const [modalData, setModalData] = useState(null);
 
-  // carga inicial + cuando cambian página o filtro aplicado
+  /**
+   * useEffect principal:
+   * Se ejecuta cada vez que cambia la página o el filtro aplicado.
+   * Obtiene la lista de tipos desde el backend.
+   */
   useEffect(() => {
     cargarTipos();
   }, [pagina, filtro]);
 
+  /**
+   * Carga los tipos de empresa desde el backend usando
+   * el filtro y la página actual.
+   */
   async function cargarTipos() {
     setLoading(true);
     try {
       const data = await listarTiposEmpresa(pagina, filtro);
 
-      // tu backend devuelve paginado, así que respetamos eso
+      /**
+       * El backend devuelve:
+       * {
+       *   contenido: [...],
+       *   totalPaginas: X
+       * }
+       */
       setTipos(Array.isArray(data) ? data : data.contenido || []);
       setTotalPaginas(data.totalPaginas || 1);
     } catch (err) {
@@ -39,17 +81,29 @@ export default function AdminTipoEmpresaList() {
     setLoading(false);
   }
 
+  /**
+   * Aplica el texto ingresado como filtro real.
+   * - Reinicia la página a 1.
+   * - Ejecuta nueva carga en el useEffect.
+   */
   const handleClickBuscar = () => {
-    setPagina(1);        // vuelves a la primera página
-    setFiltro(busqueda); // aplicas el texto actual del input
+    setPagina(1);
+    setFiltro(busqueda);
   };
 
+  /**
+   * Elimina un tipo de empresa por ID.
+   * Solicita confirmación antes de eliminar.
+   */
   const handleEliminar = async (id) => {
     if (!window.confirm("¿Eliminar este tipo de empresa?")) return;
 
     try {
       await eliminarTipoEmpresa(id);
+
+      // Actualiza solo el estado local.
       setTipos((prev) => prev.filter((t) => t.id !== id));
+
       alert("Tipo de empresa eliminado");
     } catch (err) {
       console.error(err);
@@ -57,9 +111,13 @@ export default function AdminTipoEmpresaList() {
     }
   };
 
+  /**
+   * Obtiene un tipo de empresa por ID y abre el modal en modo edición.
+   */
   const abrirModalEditar = async (fila) => {
     try {
       const tipo = await obtenerTipoEmpresa(fila.id);
+
       setModalData({
         modo: "editar",
         tipo,
@@ -72,9 +130,12 @@ export default function AdminTipoEmpresaList() {
 
   return (
     <div className="admin-wrapper">
+
       <h1 className="admin-title">Gestionar Tipos de Empresa</h1>
 
-      {/* Buscador */}
+      {/* ----------------------------- */}
+      {/* BUSCADOR                     */}
+      {/* ----------------------------- */}
       <div className="admin-form">
         <input
           type="text"
@@ -82,14 +143,19 @@ export default function AdminTipoEmpresaList() {
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           className="admin-input"
+
+          // Permitir ejecutar búsqueda con Enter
           onKeyDown={(e) => {
-            if (e.key === "Enter") handleClickBuscar(); // buscar también con Enter
+            if (e.key === "Enter") handleClickBuscar();
           }}
         />
+
         <ButtonAction text="Buscar" onClick={handleClickBuscar} />
       </div>
 
-      {/* Crear */}
+      {/* ----------------------------- */}
+      {/* BOTÓN CREAR                 */}
+      {/* ----------------------------- */}
       <div className="admin-form">
         <ButtonAction
           text="Crear Tipo de Empresa"
@@ -102,7 +168,9 @@ export default function AdminTipoEmpresaList() {
         />
       </div>
 
-      {/* Modal */}
+      {/* ----------------------------- */}
+      {/* MODAL CREAR/EDITAR          */}
+      {/* ----------------------------- */}
       {modalData && (
         <CrearTipoEmpresa
           modo={modalData.modo}
@@ -114,7 +182,9 @@ export default function AdminTipoEmpresaList() {
         />
       )}
 
-      {/* Tabla */}
+      {/* ----------------------------- */}
+      {/* TABLA                        */}
+      {/* ----------------------------- */}
       <table className="admin-table">
         <thead>
           <tr>
@@ -127,26 +197,24 @@ export default function AdminTipoEmpresaList() {
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan="3" className="admin-msg">
-                Cargando...
-              </td>
+              <td colSpan="3" className="admin-msg">Cargando...</td>
             </tr>
           ) : tipos.length === 0 ? (
             <tr>
-              <td colSpan="3" className="admin-msg">
-                No hay resultados
-              </td>
+              <td colSpan="3" className="admin-msg">No hay resultados</td>
             </tr>
           ) : (
             tipos.map((t) => (
               <tr key={t.id}>
                 <td>{t.id}</td>
                 <td>{t.nombre}</td>
+
                 <td className="admin-actions">
                   <ButtonAction
                     text="Editar"
                     onClick={() => abrirModalEditar(t)}
                   />
+
                   <ButtonAction
                     text="Eliminar"
                     onClick={() => handleEliminar(t.id)}
@@ -158,7 +226,9 @@ export default function AdminTipoEmpresaList() {
         </tbody>
       </table>
 
-      {/* Paginación */}
+      {/* ----------------------------- */}
+      {/* PAGINACIÓN                   */}
+      {/* ----------------------------- */}
       <div className="admin-pagination">
         <ButtonAction
           text="Anterior"

@@ -1,12 +1,47 @@
-// Base de la API: primero VITE_API_URL, si no existe usa Render
+// ======================================================================
+// Servicio: tiposDesarrollador.js
+// Maneja todo lo relacionado con "Tipos de Desarrollador".
+// Estos tipos son categorías como:
+//   - Frontend
+//   - Backend
+//   - FullStack
+// etc.
+//
+// Cada función de este archivo se comunica con el backend usando fetch.
+// ======================================================================
+
+
+
+// ----------------------------------------------------------------------
+// API_BASE:
+// ----------------------------------------------------------------------
 const API_BASE =
   import.meta.env.VITE_API_URL ||
   "https://nolimits-backend-final.onrender.com";
 
-// Endpoint base para tipos de desarrollador
+
+// ----------------------------------------------------------------------
+// API_URL:
+// ----------------------------------------------------------------------
 const API_URL = `${API_BASE}/api/tipos-desarrollador`;
 
-// GET: listar todos los tipos de desarrollador + filtro por nombre en el front
+
+
+/* ======================================================================
+   LISTAR TIPOS DE DESARROLLADOR
+   GET /api/tipos-desarrollador
+
+   Esta función trae TODOS los tipos registrados en el backend.
+
+   Parámetros:
+   - pagina: no usado actualmente (el backend no pagina)
+   - busqueda: texto para filtrar por nombre pero en el frontend
+
+   Funcionamiento:
+   1. Pide la lista completa al backend.
+   2. Si no hay búsqueda, devuelve toda la lista.
+   3. Si hay búsqueda, filtra por nombre desde el frontend.
+   ====================================================================== */
 export async function listarTiposDesarrollador(pagina, busqueda = "") {
   const res = await fetch(API_URL);
 
@@ -18,19 +53,27 @@ export async function listarTiposDesarrollador(pagina, busqueda = "") {
 
   const data = await res.json();
 
-  // ⬇️ Si no hay texto de búsqueda, devolvemos todo tal cual
+  // Si no se buscó nada, devolvemos todo.
   if (!busqueda || !busqueda.trim()) {
     return data;
   }
 
-  // ⬇️ Filtro en memoria por nombre
+  // Filtro por nombre en memoria
   const needle = busqueda.trim().toLowerCase();
   return data.filter((item) =>
     (item.nombre || "").toLowerCase().includes(needle)
   );
 }
 
-// GET: obtener uno por ID
+
+
+/* ======================================================================
+   OBTENER TIPO POR ID
+   GET /api/tipos-desarrollador/{id}
+
+   Devuelve la información de un tipo de desarrollador específico.
+   Se usa en pantallas como Editar Tipo.
+   ====================================================================== */
 export async function obtenerTipoDesarrollador(id) {
   const res = await fetch(`${API_URL}/${id}`);
 
@@ -43,7 +86,17 @@ export async function obtenerTipoDesarrollador(id) {
   return await res.json();
 }
 
-// POST: crear
+
+
+/* ======================================================================
+   CREAR TIPO DE DESARROLLADOR
+   POST /api/tipos-desarrollador
+
+   data es un objeto con la información a crear, ejemplo:
+     { nombre: "Backend" }
+
+   Si el servidor responde con error, se lanza una excepción.
+   ====================================================================== */
 export async function crearTipoDesarrollador(data) {
   const res = await fetch(API_URL, {
     method: "POST",
@@ -60,7 +113,15 @@ export async function crearTipoDesarrollador(data) {
   return await res.json();
 }
 
-// PUT: actualizar completo
+
+
+/* ======================================================================
+   ACTUALIZAR TIPO COMPLETO (PUT)
+   PUT /api/tipos-desarrollador/{id}
+
+   Reemplaza todo el objeto del tipo de desarrollador.
+   data es el nuevo objeto completo.
+   ====================================================================== */
 export async function actualizarTipoDesarrollador(id, data) {
   const res = await fetch(`${API_URL}/${id}`, {
     method: "PUT",
@@ -77,7 +138,15 @@ export async function actualizarTipoDesarrollador(id, data) {
   return await res.json();
 }
 
-// DELETE: eliminar
+
+
+/* ======================================================================
+   ELIMINAR TIPO
+   DELETE /api/tipos-desarrollador/{id}
+
+   Elimina un tipo de desarrollador por su ID.
+   Si falla, lanza un error.
+   ====================================================================== */
 export async function eliminarTipoDesarrollador(id) {
   const res = await fetch(`${API_URL}/${id}`, {
     method: "DELETE",

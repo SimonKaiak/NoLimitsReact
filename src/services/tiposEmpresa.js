@@ -1,14 +1,42 @@
-// Ruta: src/services/tiposEmpresa.js
+// ======================================================================
+// Servicio: tiposEmpresa.js
+// Maneja todo lo relacionado con "Tipos de Empresa".
+// Ejemplos de tipos: Comercial, Editorial, Distribuidora, etc.
+//
+// Todas estas funciones se comunican con el backend usando fetch.
+// ======================================================================
 
-// Base de la API: primero VITE_API_URL, si no existe usa Render
+
+
+// ----------------------------------------------------------------------
+// API_BASE:
+// ----------------------------------------------------------------------
 const API_BASE =
   import.meta.env.VITE_API_URL ||
   "https://nolimits-backend-final.onrender.com";
 
-// Endpoint base para tipos de empresa
+
+// ----------------------------------------------------------------------
+// API_URL:
+// Ruta base para todos los endpoints de tipos de empresa.
+// ----------------------------------------------------------------------
 const API_URL = `${API_BASE}/api/v1/tipos-empresa`;
 
-// GET: listar todos los tipos de empresa + filtro por nombre en el front
+
+
+/* ======================================================================
+   LISTAR TIPOS DE EMPRESA
+   GET /api/v1/tipos-empresa
+
+   Parámetros:
+     - pagina: actualmente no se usa porque el backend no pagina.
+     - busqueda: texto para filtrar por nombre pero desde el front.
+
+   Funcionamiento:
+     1. Trae todo desde el backend.
+     2. Si no hay búsqueda, devuelve la lista tal cual.
+     3. Si hay búsqueda, filtra en memoria por coincidencia en el nombre.
+   ====================================================================== */
 export async function listarTiposEmpresa(pagina, busqueda = "") {
   const res = await fetch(API_URL);
 
@@ -20,7 +48,7 @@ export async function listarTiposEmpresa(pagina, busqueda = "") {
 
   const data = await res.json();
 
-  // Si no hay texto de búsqueda, devolvemos todo tal cual
+  // Si no buscamos nada, devolvemos todo.
   if (!busqueda || !busqueda.trim()) {
     return data;
   }
@@ -32,6 +60,15 @@ export async function listarTiposEmpresa(pagina, busqueda = "") {
   );
 }
 
+
+
+/* ======================================================================
+   OBTENER TIPO DE EMPRESA POR ID
+   GET /api/v1/tipos-empresa/{id}
+
+   Devuelve la información completa para un tipo de empresa específico.
+   Se usa en pantallas como "Editar Tipo de Empresa".
+   ====================================================================== */
 export async function obtenerTipoEmpresa(id) {
   const res = await fetch(`${API_URL}/${id}`);
 
@@ -44,6 +81,17 @@ export async function obtenerTipoEmpresa(id) {
   return await res.json();
 }
 
+
+
+/* ======================================================================
+   CREAR TIPO DE EMPRESA
+   POST /api/v1/tipos-empresa
+
+   payload debe ser un objeto, por ejemplo:
+     { nombre: "Editorial" }
+
+   Si el servidor responde con error, lanzamos un mensaje.
+   ====================================================================== */
 export async function crearTipoEmpresa(payload) {
   const res = await fetch(API_URL, {
     method: "POST",
@@ -60,6 +108,14 @@ export async function crearTipoEmpresa(payload) {
   return await res.json();
 }
 
+
+
+/* ======================================================================
+   ACTUALIZAR COMPLETAMENTE (PUT)
+   PUT /api/v1/tipos-empresa/{id}
+
+   Reemplaza todos los campos del tipo de empresa con los nuevos del payload.
+   ====================================================================== */
 export async function actualizarTipoEmpresa(id, payload) {
   const res = await fetch(`${API_URL}/${id}`, {
     method: "PUT",
@@ -76,6 +132,15 @@ export async function actualizarTipoEmpresa(id, payload) {
   return await res.json();
 }
 
+
+
+/* ======================================================================
+   ELIMINAR TIPO DE EMPRESA
+   DELETE /api/v1/tipos-empresa/{id}
+
+   Elimina el tipo de empresa según su ID.
+   Si algo falla, lanzamos un error.
+   ====================================================================== */
 export async function eliminarTipoEmpresa(id) {
   const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
 

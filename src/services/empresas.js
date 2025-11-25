@@ -1,9 +1,34 @@
-// Ruta: src/services/empresas.js
+// ============================================================
+// Servicio: empresas.js
+// Maneja todas las operaciones CRUD de "Empresas"
+// ------------------------------------------------------------
+// Este servicio permite:
+// - Listar empresas
+// - Buscar empresas por nombre (en el front)
+// - Crear una empresa
+// - Editar completamente una empresa (PUT)
+// - Editar parcialmente una empresa (PATCH)
+// - Eliminar una empresa
+// - Obtener empresa por ID
+// ============================================================
+
+// API_BASE:
 const API_BASE = "https://nolimits-backend-final.onrender.com/api/v1";
+
+// URL completa del recurso "empresas"
 const API_URL = `${API_BASE}/empresas`;
 
-// LISTAR + BÚSQUEDA EN FRONT
+
+// ====================================================================
+// LISTAR EMPRESAS (GET /empresas)
+// --------------------------------------------------------------------
+// - page: por compatibilidad futura (no afecta aquí).
+// - search: texto que escribe el usuario para buscar por nombre.
+// - El backend devuelve una lista completa, sin paginación real.
+// - Si viene search, filtramos desde el frontend.
+// ====================================================================
 export async function listarEmpresas(page = 1, search = "") {
+
   const res = await fetch(API_URL);
 
   if (!res.ok) {
@@ -14,7 +39,7 @@ export async function listarEmpresas(page = 1, search = "") {
 
   const data = await res.json();
 
-  // si no hay búsqueda, devolvemos tal cual
+  // Si no hay búsqueda, devolvemos la lista tal cual
   if (!search || !search.trim()) {
     return data;
   }
@@ -22,13 +47,24 @@ export async function listarEmpresas(page = 1, search = "") {
   const needle = search.trim().toLowerCase();
   const lista = Array.isArray(data) ? data : data.contenido || [];
 
+  // Filtramos en el front por coincidencia en nombre
   return lista.filter((item) =>
     (item.nombre || "").toLowerCase().includes(needle)
   );
 }
 
-// CREAR
+
+// ====================================================================
+// CREAR EMPRESA (POST /empresas)
+// --------------------------------------------------------------------
+// payload: objeto con los datos de la empresa nueva, por ejemplo:
+// {
+//   nombre: "Ubisoft",
+//   activo: true
+// }
+// ====================================================================
 export async function crearEmpresa(payload) {
+
   const res = await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -44,8 +80,14 @@ export async function crearEmpresa(payload) {
   return res.json();
 }
 
-// EDITAR COMPLETO (PUT)
+
+// ====================================================================
+// EDITAR EMPRESA COMPLETA (PUT /empresas/:id)
+// --------------------------------------------------------------------
+// PUT reemplaza toda la empresa en el backend.
+// ====================================================================
 export async function editarEmpresa(id, payload) {
+
   const res = await fetch(`${API_URL}/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -61,8 +103,16 @@ export async function editarEmpresa(id, payload) {
   return res.json();
 }
 
-// PATCH 
+
+// ====================================================================
+// EDITAR EMPRESA PARCIAL (PATCH /empresas/:id)
+// --------------------------------------------------------------------
+// PATCH se usa para actualizar solo algunos campos.
+// Ejemplo:
+// patchEmpresa(5, { activo: false });
+// ====================================================================
 export async function patchEmpresa(id, payload) {
+
   const res = await fetch(`${API_URL}/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -78,8 +128,14 @@ export async function patchEmpresa(id, payload) {
   return res.json();
 }
 
-// ELIMINAR
+
+// ====================================================================
+// ELIMINAR EMPRESA (DELETE /empresas/:id)
+// --------------------------------------------------------------------
+// Si elimina correctamente, retorna true.
+// ====================================================================
 export async function eliminarEmpresa(id) {
+
   const res = await fetch(`${API_URL}/${id}`, {
     method: "DELETE",
   });
@@ -93,13 +149,21 @@ export async function eliminarEmpresa(id) {
   return true;
 }
 
-// OBTENER POR ID
+
+// ====================================================================
+// OBTENER EMPRESA POR ID (GET /empresas/:id)
+// --------------------------------------------------------------------
+// Devuelve la empresa buscada, o lanza error si no existe.
+// ====================================================================
 export async function obtenerEmpresa(id) {
+
   const res = await fetch(`${API_URL}/${id}`);
+
   if (!res.ok) {
     const error = await res.text().catch(() => "");
     console.error("Error al obtener empresa:", res.status, error);
     throw new Error("Error al obtener empresa");
   }
+
   return res.json();
 }

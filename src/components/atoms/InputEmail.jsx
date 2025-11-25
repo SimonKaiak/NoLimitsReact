@@ -1,27 +1,45 @@
+// Se importa React para poder usar componentes y JSX
 import React from "react";
 
-// Campo de entrada controlado para el correo electrónico
-// dentro de formularios de autenticación.
-// Permite mostrar errores de validación dinámicamente.
-
 /**
- * Componente de entrada para correos electrónicos.
- * 
- * @param {string} value - Valor actual del campo de correo.
- * @param {function} onChange - Función que se ejecuta al cambiar el valor del input.
- * @param {boolean} hasError - Indica si el campo contiene un error de validación.
+ * Componente InputEmail
+ *
+ * Este componente representa un campo de texto específico para ingresar
+ * un correo electrónico dentro de un formulario.
+ *
+ * Sirve para que el valor sea controlado desde el componente padre,
+ * lo que permite validar, mostrar errores y manejar el contenido del input.
+ *
+ * Parámetros (props):
+ *  - value: el valor actual del campo (proviene del estado del componente padre).
+ *  - onChange: función que se ejecuta cada vez que el usuario escribe algo.
+ *  - hasError: indica si el campo tiene un error y si debe mostrarse
+ *              con estilo de error visual.
  */
-
 export const InputEmail = ({ value, onChange, hasError }) => {
-    return (
-        <input
-        id = "email"                        // Identificador único del input
-        type = "email"                      // Define el tipo de dato como correo electrónico
-        placeholder = "Ingresa tu correo"   // Texto mostrado cuando el campo está vacío
-        required                            // Hace que el campo sea obligatorio en el formulario
-        value = {value}                     // Valor controlado proveniente del estado del componente padre
-        onChange = {onChange}               // Actualiza el valor al escribir
-        className = {hasError ? "input-error" : ""} // Aplica una clase css si existe un error
-        />
-    );
+  return (
+    <input
+      // id único para identificar el input si se necesita desde CSS o JS
+      id="email"
+
+      // se declara que el tipo de campo es de correo electrónico
+      type="email"
+
+      // texto que aparece cuando el campo está vacío
+      placeholder="Ingresa tu correo"
+
+      // indica que este campo es obligatorio dentro del formulario
+      required
+
+      // valor actual del input, enviado desde el componente padre
+      value={value}
+
+      // función que se ejecuta cuando el usuario escribe en el input
+      onChange={onChange}
+
+      // si hasError es true, se aplica la clase "input-error"
+      // en caso contrario, no se aplica ningún estilo extra
+      className={hasError ? "input-error" : ""}
+    />
+  );
 };

@@ -1,164 +1,248 @@
 import { useEffect, useState } from "react";
-import styles from "../styles/perfilUsuario.css";
-import { obtenerUsuario, editarUsuario } from "../services/usuarios";
-import { obtenerRegiones } from "../services/regiones";
-import { obtenerComunas } from "../services/comunas";
+import "../styles/perfilUsuario.css";
+import { obtenerMiPerfil, actualizarMiPerfil } from "../services/usuarios";
 
+// Componente encargado de mostrar y permitir editar el perfil del usuario logueado.
 export default function PerfilUsuario() {
+  // Guarda la información completa del usuario obtenida desde el backend.
   const [usuario, setUsuario] = useState(null);
-  const [regiones, setRegiones] = useState([]);
-  const [comunas, setComunas] = useState([]);
-  const [mensaje, setMensaje] = useState("");
 
-  const usuarioId = localStorage.getItem("nl_user_id"); // ID real
-
+  // Estado que contiene los datos del formulario que el usuario puede modificar.
   const [formData, setFormData] = useState({
     nombre: "",
     apellidos: "",
+    correo: "",
     telefono: "",
     calle: "",
     numero: "",
     complemento: "",
     codigoPostal: "",
-    regionId: "",
-    comunaId: ""
+    comuna: "",
+    region: "",
   });
 
+  // Mensajes informativos que se muestran en pantalla.
+  const [mensaje, setMensaje] = useState("");
+  const [error, setError] = useState("");
+  const [mensajePass, setMensajePass] = useState("");
+
+  // Al cargar el componente, se obtiene el perfil del usuario desde el backend.
   useEffect(() => {
-    obtenerRegiones().then(setRegiones);
+    obtenerMiPerfil()
+      .then((data) => {
+        // Se guarda el usuario completo para control general.
+        setUsuario(data);
 
-    if (!usuarioId) return;
-
-    obtenerUsuario(usuarioId).then(data => {
-      setUsuario(data);
-
-      setFormData({
-        nombre: data.nombre,
-        apellidos: data.apellidos,
-        telefono: data.telefono,
-        calle: data.direccion?.calle || "",
-        numero: data.direccion?.numero || "",
-        complemento: data.direccion?.complemento || "",
-        codigoPostal: data.direccion?.codigoPostal || "",
-        regionId: data.regionId || "",
-        comunaId: data.comunaId || ""
+        // Se llena el formulario con los datos recibidos.
+        setFormData({
+          nombre: data.nombre ?? "",
+          apellidos: data.apellidos ?? "",
+          correo: data.correo ?? "",
+          telefono: data.telefono ?? "",
+          calle: data.direccion?.calle ?? "",
+          numero: data.direccion?.numero ?? "",
+          complemento: data.direccion?.complemento ?? "",
+          codigoPostal: data.direccion?.codigoPostal ?? "",
+          comuna: data.comunaNombre ?? data.direccion?.comuna?.nombre ?? "",
+          region:
+            data.regionNombre ??
+            data.direccion?.comuna?.region?.nombre ??
+            "",
+        });
+      })
+      .catch((e) => {
+        // Si ocurre un error, se muestra un mensaje indicando que no se pudo cargar el perfil.
+        console.error(e);
+        setError("Debes iniciar sesión para ver tu perfil.");
       });
-    });
-  }, [usuarioId]);
+  }, []);
 
-  useEffect(() => {
-    if (!formData.regionId) return;
-
-    obtenerComunas().then(data => {
-      const filtradas = data.filter(
-        c => c.region?.id === Number(formData.regionId)
-      );
-      setComunas(filtradas);
-    });
-  }, [formData.regionId]);
-
-  const handleChange = e => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  // Función que actualiza el estado del formulario cada vez que el usuario escribe.
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const guardarCambios = async e => {
+  // Función que se ejecuta al presionar el botón "Guardar cambios".
+  // Se encarga de enviar la información actualizada al backend.
+  const guardarCambios = async (e) => {
     e.preventDefault();
 
+    // Se arma el objeto que será enviado al backend con los datos editados.
     const payload = {
       nombre: formData.nombre,
       apellidos: formData.apellidos,
-      telefono: Number(formData.telefono)
+      telefono: formData.telefono ? Number(formData.telefono) : null,
+      calle: formData.calle,
+      numero: formData.numero,
+      complemento: formData.complemento,
+      comunaNombre: formData.comuna || null,
+      regionNombre: formData.region || null,
     };
 
     try {
-      await editarUsuario(usuarioId, payload);
-      setMensaje("✅ Perfil actualizado correctamente");
-    } catch {
-      setMensaje("❌ Error al actualizar perfil");
+      // Llamada al servicio que actualiza el perfil en la base de datos.
+      await actualizarMiPerfil(payload);
+      alert("Perfil actualizado correctamente.");
+      setMensaje("Perfil actualizado correctamente.");
+    } catch (err) {
+      // Si ocurre un error, se informa al usuario.
+      console.error(err);
+      alert("Error al actualizar perfil.");
+      setError("Error al actualizar perfil.");
     }
   };
 
-  if (!usuario) return <p className={styles["perfil-loading"]}>Cargando...</p>;
+  // Función simulada para solicitar cambio de contraseña.
+  // En una implementación real, aquí se podría llamar al backend.
+  const solicitarCambioPassword = () => {
+    alert(
+      `Se ha enviado un correo a ${formData.correo} con instrucciones para cambiar tu contraseña.`
+    );
+    setMensajePass(
+      `Se ha enviado un correo a ${formData.correo} para cambiar tu contraseña.`
+    );
+  };
 
+  // Mientras se cargan los datos del usuario, se muestra un mensaje.
+  if (!usuario && !error) {
+    return <p className="perfil-loading">Cargando perfil...</p>;
+  }
+
+  // Si existe un error, se muestra directamente.
+  if (error) {
+    return <p className="perfil-msg-error">{error}</p>;
+  }
+
+  // Render principal del formulario de perfil.
   return (
-    <div className="perfil-page">
-      <div className="perfil-card">
+    <main className="perfil-page">
+      <section className="perfil-card">
         <h2 className="perfil-title">Mi Perfil</h2>
 
+        {/* Sección de mensajes informativos */}
+        {(mensaje || mensajePass || error) && (
+          <div className="perfil-alerts">
+            {mensaje && <p className="perfil-msg">{mensaje}</p>}
+            {mensajePass && (
+              <p className="perfil-msg perfil-msg-pass">{mensajePass}</p>
+            )}
+            {error && <p className="perfil-msg-error">{error}</p>}
+          </div>
+        )}
+
+        {/* Formulario principal del perfil */}
         <form className="perfil-form" onSubmit={guardarCambios}>
-          <div className="perfil-grid">
-            <div className="perfil-field">
-              <label>Nombre</label>
-              <input name="nombre" value={formData.nombre} onChange={handleChange}/>
+          <div className="perfil-row-principal">
+            
+            {/* Columna izquierda: datos personales */}
+            <div className="perfil-col-datos">
+              <h3 className="perfil-subtitle">Datos personales</h3>
+
+              <div className="perfil-grid-dos">
+                <div className="perfil-field">
+                  <label>Nombre</label>
+                  <input
+                    type="text"
+                    name="nombre"
+                    value={formData.nombre}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="perfil-field">
+                  <label>Apellidos</label>
+                  <input
+                    type="text"
+                    name="apellidos"
+                    value={formData.apellidos}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="perfil-field">
+                  <label>Correo</label>
+                  {/* El correo no se puede modificar */}
+                  <input
+                    type="email"
+                    name="correo"
+                    value={formData.correo}
+                    disabled
+                  />
+                </div>
+
+                <div className="perfil-field">
+                  <label>Teléfono</label>
+                  <input
+                    type="tel"
+                    name="telefono"
+                    value={formData.telefono}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              {/* Botón para solicitar cambio de contraseña */}
+              <div className="perfil-cambiar-pass-left">
+                <button
+                  type="button"
+                  className="perfil-btn perfil-btn-secundario"
+                  onClick={solicitarCambioPassword}
+                >
+                  Cambiar contraseña
+                </button>
+              </div>
             </div>
 
-            <div className="perfil-field">
-              <label>Apellidos</label>
-              <input name="apellidos" value={formData.apellidos} onChange={handleChange}/>
-            </div>
+            {/* Columna derecha: datos de dirección */}
+            <div className="perfil-col-direccion">
+              <h3 className="perfil-subtitle">Dirección</h3>
 
-            <div className="perfil-field">
-              <label>Correo</label>
-              <input value={usuario.correo} disabled />
-            </div>
+              <div className="perfil-grid-tres-vertical">
+                <div className="perfil-field">
+                  <label>Calle</label>
+                  <input
+                    type="text"
+                    name="calle"
+                    value={formData.calle}
+                    onChange={handleChange}
+                  />
+                </div>
 
-            <div className="perfil-field">
-              <label>Teléfono</label>
-              <input name="telefono" value={formData.telefono} onChange={handleChange}/>
+                <div className="perfil-field">
+                  <label>Número</label>
+                  <input
+                    type="text"
+                    name="numero"
+                    value={formData.numero}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="perfil-field">
+                  <label>Complemento</label>
+                  <input
+                    type="text"
+                    name="complemento"
+                    value={formData.complemento}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          <h3 className="perfil-subtitle">Dirección</h3>
-
-          <div className="perfil-grid">
-            <div className="perfil-field">
-              <label>Región</label>
-              <select name="regionId" value={formData.regionId} onChange={handleChange}>
-                <option value="">Seleccione región</option>
-                {regiones.map(r => (
-                  <option key={r.id} value={r.id}>{r.nombre}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="perfil-field">
-              <label>Comuna</label>
-              <select name="comunaId" value={formData.comunaId} onChange={handleChange}>
-                <option value="">Seleccione comuna</option>
-                {comunas.map(c => (
-                  <option key={c.id} value={c.id}>{c.nombre}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="perfil-field">
-              <label>Calle</label>
-              <input name="calle" value={formData.calle} onChange={handleChange}/>
-            </div>
-
-            <div className="perfil-field">
-              <label>Número</label>
-              <input name="numero" value={formData.numero} onChange={handleChange}/>
-            </div>
-
-            <div className="perfil-field">
-              <label>Complemento</label>
-              <input name="complemento" value={formData.complemento} onChange={handleChange}/>
-            </div>
-
-            <div className="perfil-field">
-              <label>Código Postal</label>
-              <input name="codigoPostal" value={formData.codigoPostal} onChange={handleChange}/>
-            </div>
+          {/* Botón central para guardar los cambios */}
+          <div className="perfil-actions-center">
+            <button type="submit" className="perfil-btn">
+              Guardar cambios
+            </button>
           </div>
-
-          <button className="perfil-btn" type="submit">
-            Guardar cambios
-          </button>
-
-          {mensaje && <p className="perfil-msg">{mensaje}</p>}
         </form>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

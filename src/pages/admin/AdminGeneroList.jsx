@@ -8,54 +8,105 @@ import {
   obtenerGenero,
 } from "../../services/generos";
 
+/**
+ * AdminGeneroList
+ *
+ * Página para administrar géneros del sistema.
+ * Un "género" puede representar categorías como Acción, Terror, Aventura, etc.
+ *
+ * Desde esta vista se puede:
+ * - Mostrar la lista de géneros
+ * - Buscar por nombre
+ * - Crear un nuevo género
+ * - Editar un género existente
+ * - Eliminar un género de la base de datos
+ */
 export default function AdminGeneroList() {
+
+  // Lista actual de géneros que se mostrará en la tabla
   const [generos, setGeneros] = useState([]);
 
-  // Lo que el usuario escribe
+  // Lo que el usuario escribe en el input del buscador
   const [busquedaInput, setBusquedaInput] = useState("");
-  // Filtro real que se usa para llamar al backend
+
+  // Filtro real que se usa para llamar al backend.
+  // Solo se actualiza cuando se hace clic en "Buscar".
   const [filtroBusqueda, setFiltroBusqueda] = useState("");
 
+  // Página actual (el backend no pagina, pero el código queda preparado)
   const [pagina, setPagina] = useState(1);
+
+  // Total de páginas (por ahora es siempre 1)
   const [totalPaginas, setTotalPaginas] = useState(1);
+
+  // Estado que indica si estamos esperando una respuesta del backend
   const [loading, setLoading] = useState(false);
+
+  // Información usada para abrir el modal
+  // Puede contener un modo ("crear" | "editar") y los datos del género
   const [modalData, setModalData] = useState(null);
 
+  /**
+   * Cada vez que cambie "pagina" o "filtroBusqueda",
+   * se vuelve a cargar la lista de géneros desde el backend.
+   */
   useEffect(() => {
     cargarGeneros(filtroBusqueda);
   }, [pagina, filtroBusqueda]);
 
+  /**
+   * Llama al backend para obtener los géneros.
+   * Soporta dos formas posibles de respuesta:
+   * - Un array directo
+   * - Un objeto que contiene un campo "contenido"
+   */
   async function cargarGeneros(filtro = "") {
     setLoading(true);
     try {
       const data = await listarGeneros(pagina, filtro);
+
+      // Si es array lo usamos directo; si no, tomamos el contenido
       setGeneros(Array.isArray(data) ? data : data.contenido || []);
-      setTotalPaginas(1); // por ahora fijo
+      setTotalPaginas(1);
+
     } catch (err) {
       console.error(err);
-      alert("❌ Error al cargar géneros");
+      alert("Error al cargar géneros");
     }
     setLoading(false);
   }
 
+  /**
+   * Aplica la búsqueda solo cuando el usuario presiona el botón "Buscar".
+   */
   const handleBuscarClick = () => {
     setPagina(1);
-    setFiltroBusqueda(busquedaInput); // aquí recién aplicas la búsqueda
+    setFiltroBusqueda(busquedaInput);
   };
 
+  /**
+   * Elimina un género por ID.
+   * Antes pregunta al usuario si está seguro.
+   */
   const handleEliminar = async (id) => {
     if (!window.confirm("¿Eliminar género?")) return;
 
     try {
       await eliminarGenero(id);
+
+      // Eliminamos el género localmente sin recargar todo
       setGeneros((prev) => prev.filter((g) => g.id !== id));
-      alert("Género eliminado!");
+
+      alert("Género eliminado");
     } catch (err) {
       console.error(err);
-      alert("❌ Error al eliminar");
+      alert("Error al eliminar género");
     }
   };
 
+  /**
+   * Abre el modal con los datos del género seleccionado para edición.
+   */
   const abrirModalEditar = async (fila) => {
     try {
       const gen = await obtenerGenero(fila.id);
@@ -65,7 +116,7 @@ export default function AdminGeneroList() {
       });
     } catch (err) {
       console.error(err);
-      alert("❌ Error al obtener género");
+      alert("Error al obtener género");
     }
   };
 
@@ -85,7 +136,7 @@ export default function AdminGeneroList() {
         <ButtonAction text="Buscar" onClick={handleBuscarClick} />
       </div>
 
-      {/* Crear */}
+      {/* Botón crear */}
       <div className="admin-form">
         <ButtonAction
           text="Crear Género"
@@ -98,19 +149,19 @@ export default function AdminGeneroList() {
         />
       </div>
 
-      {/* Modal */}
+      {/* Modal Crear / Editar */}
       {modalData && (
         <CrearGenero
           modo={modalData.modo}
           genero={modalData.genero}
           onCerrar={() => {
             setModalData(null);
-            cargarGeneros(filtroBusqueda);
+            cargarGeneros(filtroBusqueda); // recarga respetando el filtro actual
           }}
         />
       )}
 
-      {/* Tabla */}
+      {/* Tabla principal */}
       <table className="admin-table">
         <thead>
           <tr>
@@ -121,23 +172,31 @@ export default function AdminGeneroList() {
         </thead>
 
         <tbody>
+          {/* Estado de carga */}
           {loading ? (
             <tr>
               <td colSpan="3" className="admin-msg">
                 Cargando...
               </td>
             </tr>
+
           ) : generos.length === 0 ? (
+
+            // Sin resultados
             <tr>
               <td colSpan="3" className="admin-msg">
                 No hay resultados
               </td>
             </tr>
+
           ) : (
+
+            // Mostrar lista
             generos.map((g) => (
               <tr key={g.id}>
                 <td>{g.id}</td>
                 <td>{g.nombre}</td>
+
                 <td className="admin-actions">
                   <ButtonAction text="Editar" onClick={() => abrirModalEditar(g)} />
                   <ButtonAction text="Eliminar" onClick={() => handleEliminar(g.id)} />
@@ -148,16 +207,18 @@ export default function AdminGeneroList() {
         </tbody>
       </table>
 
-      {/* Paginación (placeholder) */}
+      {/* Paginación (simulada) */}
       <div className="admin-pagination">
         <ButtonAction
           text="Anterior"
           disabled={pagina <= 1}
           onClick={() => setPagina((p) => p - 1)}
         />
+
         <span className="admin-page-info">
           Página {pagina} / {totalPaginas}
         </span>
+
         <ButtonAction
           text="Siguiente"
           disabled={pagina >= totalPaginas}

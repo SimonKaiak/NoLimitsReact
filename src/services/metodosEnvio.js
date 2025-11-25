@@ -1,10 +1,36 @@
-// Ruta: src/services/metodosEnvio.js
+// ======================================================================
+// Servicio: metodosEnvio.js
+// Gestión completa del catálogo "Métodos de Envío"
+// ----------------------------------------------------------------------
+// Este archivo maneja todas las operaciones CRUD:
+//
+// - LISTAR métodos de envío  (GET /api/v1/metodos-envio)
+// - BUSCAR por nombre        (filtro aplicado en el FRONT)
+// - CREAR                    (POST)
+// - EDITAR completo          (PUT)
+// - EDITAR parcial           (PATCH)
+// - ELIMINAR                 (DELETE)
+// - OBTENER POR ID           (GET /{id})
+//
+// ======================================================================
 
+// URL base 
 const API_BASE =
   import.meta.env.VITE_API_URL ||
   "https://nolimits-backend-final.onrender.com";
 
-// LISTAR + filtro por nombre en el FRONT
+
+// ======================================================================
+// LISTAR MÉTODOS DE ENVÍO (GET /metodos-envio)
+// ----------------------------------------------------------------------
+// - page: solo por compatibilidad, el backend no pagina aún.
+// - search: filtro por nombre, aplicado en el FRONT.
+//
+// Flujo:
+// 1. Llamamos al backend
+// 2. Si viene search, filtramos aquí
+// 3. Devolvemos { contenido, totalPaginas: 1 }
+// ======================================================================
 export async function listarMetodosEnvio(page = 1, search = "") {
   const endpoint = `${API_BASE}/api/v1/metodos-envio`;
   console.log("[listarMetodosEnvio] endpoint:", endpoint);
@@ -20,8 +46,10 @@ export async function listarMetodosEnvio(page = 1, search = "") {
   const data = await res.json();
   console.log("[listarMetodosEnvio] raw data:", data);
 
+  // Normalizamos: el backend devuelve un array directamente
   let lista = Array.isArray(data) ? data : [];
 
+  // Filtro por nombre en el FRONT
   const filtro = search.trim().toLowerCase();
   if (filtro) {
     lista = lista.filter((m) =>
@@ -31,12 +59,19 @@ export async function listarMetodosEnvio(page = 1, search = "") {
 
   return {
     contenido: lista,
-    totalPaginas: 1,
+    totalPaginas: 1
   };
 }
 
-// CREAR → POST /api/v1/metodos-envio
+
+// ======================================================================
+// CREAR MÉTODO DE ENVÍO (POST)
+// ----------------------------------------------------------------------
+// payload ejemplo:
+// { nombre: "Envío Express", activo: true }
+// ======================================================================
 export async function crearMetodoEnvio(payload) {
+
   const res = await fetch(`${API_BASE}/api/v1/metodos-envio`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -51,8 +86,16 @@ export async function crearMetodoEnvio(payload) {
   return res.json();
 }
 
-// EDITAR (PUT) → /api/v1/metodos-envio/{id}
+
+// ======================================================================
+// EDITAR COMPLETO (PUT /metodos-envio/:id)
+// ----------------------------------------------------------------------
+// PUT reemplaza TODO el objeto.
+// payload ejemplo:
+// { nombre: "Retiro en tienda", activo: false }
+// ======================================================================
 export async function editarMetodoEnvio(id, payload) {
+
   const res = await fetch(`${API_BASE}/api/v1/metodos-envio/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -67,8 +110,16 @@ export async function editarMetodoEnvio(id, payload) {
   return res.json();
 }
 
-// PATCH → /api/v1/metodos-envio/{id}
+
+// ======================================================================
+// EDITAR PARCIALMENTE (PATCH /metodos-envio/:id)
+// ----------------------------------------------------------------------
+// PATCH solo actualiza campos específicos.
+// payload ejemplo:
+// { activo: true }
+// ======================================================================
 export async function patchMetodoEnvio(id, payload) {
+
   const res = await fetch(`${API_BASE}/api/v1/metodos-envio/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -79,8 +130,14 @@ export async function patchMetodoEnvio(id, payload) {
   return res.json();
 }
 
-// ELIMINAR → DELETE /api/v1/metodos-envio/{id}
+
+// ======================================================================
+// ELIMINAR (DELETE /metodos-envio/:id)
+// ----------------------------------------------------------------------
+// Si la operación es exitosa, retornamos true.
+// ======================================================================
 export async function eliminarMetodoEnvio(id) {
+
   const res = await fetch(`${API_BASE}/api/v1/metodos-envio/${id}`, {
     method: "DELETE",
   });
@@ -89,10 +146,17 @@ export async function eliminarMetodoEnvio(id) {
   return true;
 }
 
-// OBTENER POR ID → GET /api/v1/metodos-envio/{id}
+
+// ======================================================================
+// OBTENER POR ID (GET /metodos-envio/:id)
+// ----------------------------------------------------------------------
+// Retorna un método de envío específico.
+// ======================================================================
 export async function obtenerMetodoEnvio(id) {
+
   const res = await fetch(`${API_BASE}/api/v1/metodos-envio/${id}`);
 
   if (!res.ok) throw new Error("Error al obtener método de envío");
+
   return res.json();
 }

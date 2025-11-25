@@ -1,4 +1,5 @@
 // Ruta: src/pages/admin/AdminTipoDesarrolladorList.jsx
+
 import React, { useEffect, useState } from "react";
 import { ButtonAction } from "../../components/atoms/ButtonAction.jsx";
 import CrearTipoDesarrollador from "../../components/organisms/CrearTipoDesarrollador.jsx";
@@ -9,28 +10,62 @@ import {
 } from "../../services/tiposDesarrollador.js";
 import "../../styles/adminBase.css";
 
+/**
+ * AdminTipoDesarrolladorList
+ *
+ * Pantalla de administración para los Tipos de Desarrollador.
+ * Aquí se puede:
+ *  - Buscar tipos de desarrollador por nombre
+ *  - Listar resultados paginados
+ *  - Crear un nuevo tipo de desarrollador
+ *  - Editar uno existente
+ *  - Eliminar uno existente
+ *
+ * Esta pantalla usa un buscador manual: el usuario escribe, pero
+ * la búsqueda real solo se ejecuta cuando presiona el botón “Buscar”
+ * o presiona Enter.
+ */
 export default function AdminTipoDesarrolladorList() {
+  
+  // Lista de tipos obtenidos desde el backend.
   const [tipos, setTipos] = useState([]);
-  const [busqueda, setBusqueda] = useState("");        // lo que escribe el usuario
-  const [filtro, setFiltro] = useState("");            // lo que realmente se aplica al buscar
+
+  // Texto que escribe el usuario en el input.
+  const [busqueda, setBusqueda] = useState("");
+
+  // Filtro real aplicado a la consulta.
+  const [filtro, setFiltro] = useState("");
+
+  // Control de paginación.
   const [pagina, setPagina] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
+
+  // Indica si se está cargando la información.
   const [loading, setLoading] = useState(false);
 
+  // Datos para abrir el modal (crear o editar).
   const [modalData, setModalData] = useState(null);
 
-  // Carga inicial y cuando cambian página o filtro aplicado
+  /**
+   * Cargar datos cada vez que cambian:
+   * - la página actual
+   * - el filtro aplicado
+   */
   useEffect(() => {
     cargarTipos();
   }, [pagina, filtro]);
 
+  /**
+   * Cargar lista desde backend.
+   * Usa el valor de "filtro" para buscar,
+   * no el texto que el usuario está escribiendo.
+   */
   async function cargarTipos() {
     setLoading(true);
     try {
-      // ahora la búsqueda se hace con "filtro" (no con lo que se va escribiendo)
       const data = await listarTiposDesarrollador(pagina, filtro);
       setTipos(Array.isArray(data) ? data : data.contenido || []);
-      setTotalPaginas(1); // por ahora fijo
+      setTotalPaginas(1); // por ahora fijo, ya que el backend no pagina
     } catch (err) {
       console.error(err);
       alert("❌ Error al cargar tipos de desarrollador");
@@ -38,12 +73,18 @@ export default function AdminTipoDesarrolladorList() {
     setLoading(false);
   }
 
+  /**
+   * Ejecuta la búsqueda real.
+   * Aplica el texto escrito y reinicia la página a 1.
+   */
   const handleClickBuscar = () => {
-    // cuando aprietas el botón:
-    setPagina(1);          // vuelves a la primera página
-    setFiltro(busqueda);   // aplicas el texto que esté escrito
+    setPagina(1);
+    setFiltro(busqueda);
   };
 
+  /**
+   * Eliminar un tipo por ID.
+   */
   const handleEliminar = async (id) => {
     if (!window.confirm("¿Eliminar este tipo de desarrollador?")) return;
 
@@ -57,9 +98,14 @@ export default function AdminTipoDesarrolladorList() {
     }
   };
 
+  /**
+   * Abrir modal en modo edición.
+   * Se obtiene el tipo seleccionado desde backend.
+   */
   const abrirModalEditar = async (fila) => {
     try {
       const tipo = await obtenerTipoDesarrollador(fila.id);
+
       setModalData({
         modo: "editar",
         tipo,
@@ -70,6 +116,9 @@ export default function AdminTipoDesarrolladorList() {
     }
   };
 
+  /**
+   * Renderizado principal.
+   */
   return (
     <div className="admin-wrapper">
       <h1 className="admin-title">Gestionar Tipos de Desarrollador</h1>
@@ -82,14 +131,16 @@ export default function AdminTipoDesarrolladorList() {
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           className="admin-input"
+
+          // Permitir buscar con Enter
           onKeyDown={(e) => {
-            if (e.key === "Enter") handleClickBuscar(); // buscar también con Enter
+            if (e.key === "Enter") handleClickBuscar();
           }}
         />
         <ButtonAction text="Buscar" onClick={handleClickBuscar} />
       </div>
 
-      {/* Crear */}
+      {/* Crear nuevo tipo */}
       <div className="admin-form">
         <ButtonAction
           text="Crear Tipo de Desarrollador"
@@ -102,19 +153,19 @@ export default function AdminTipoDesarrolladorList() {
         />
       </div>
 
-      {/* Modal */}
+      {/* Modal para crear o editar */}
       {modalData && (
         <CrearTipoDesarrollador
           modo={modalData.modo}
           tipo={modalData.tipo}
           onCerrar={() => {
             setModalData(null);
-            cargarTipos();
+            cargarTipos(); // recargar resultados después de cerrar
           }}
         />
       )}
 
-      {/* Tabla */}
+      {/* Tabla de resultados */}
       <table className="admin-table">
         <thead>
           <tr>
@@ -127,15 +178,11 @@ export default function AdminTipoDesarrolladorList() {
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan="3" className="admin-msg">
-                Cargando...
-              </td>
+              <td colSpan="3" className="admin-msg">Cargando...</td>
             </tr>
           ) : tipos.length === 0 ? (
             <tr>
-              <td colSpan="3" className="admin-msg">
-                No hay resultados
-              </td>
+              <td colSpan="3" className="admin-msg">No hay resultados</td>
             </tr>
           ) : (
             tipos.map((t) => (
@@ -143,14 +190,8 @@ export default function AdminTipoDesarrolladorList() {
                 <td>{t.id}</td>
                 <td>{t.nombre}</td>
                 <td className="admin-actions">
-                  <ButtonAction
-                    text="Editar"
-                    onClick={() => abrirModalEditar(t)}
-                  />
-                  <ButtonAction
-                    text="Eliminar"
-                    onClick={() => handleEliminar(t.id)}
-                  />
+                  <ButtonAction text="Editar" onClick={() => abrirModalEditar(t)} />
+                  <ButtonAction text="Eliminar" onClick={() => handleEliminar(t.id)} />
                 </td>
               </tr>
             ))

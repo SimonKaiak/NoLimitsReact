@@ -17,7 +17,7 @@ img {
 
   background:
     linear-gradient(rgba(0, 0, 0, .30), rgba(0, 0, 0, .30)),
-    url("/public/fondo1.webp") no-repeat center center;
+    url("../assets/img/fondos/fondo1.webp") no-repeat center center;
   background-size: cover;
 
   color: white;
@@ -177,7 +177,7 @@ img {
 
 /* Elimina fondo negro vertical en el cuadro de recuperar contraseña*/
 .no-dark-overlay {
-    background: url("/public/fondo1.webp") no-repeat center center !important;
+    background: url("../assets/img/fondos/fondo1.webp") no-repeat center center !important;
     background-size: cover !important;
 }
 

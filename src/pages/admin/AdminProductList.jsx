@@ -8,14 +8,40 @@ import {
 import CrearProducto from "../../components/organisms/CrearProducto";
 import "../../styles/adminProductos.css";
 
+/**
+ * AdminProductList
+ *
+ * Componente de administración para la entidad Producto.
+ * Permite:
+ *  Buscar un producto por ID
+ *  Mostrar datos del producto encontrado
+ *  Editar un producto (usa CrearProducto en modo "editar")
+ *  Eliminar un producto
+ *  Crear nuevos productos desde un formulario persistente
+ *
+ *  Esta pantalla funciona distinta a las otras,
+ *       pues no lista todos los productos sino que trabaja por ID.
+ */
 export default function AdminProductList() {
+  // ID ingresado por el usuario en el buscador
   const [busquedaId, setBusquedaId] = useState("");
+
+  // Resultado del producto encontrado por ID
   const [resultadoBusqueda, setResultadoBusqueda] = useState(null);
+
+  // Mensaje de error en caso de que el ID no exista
   const [error, setError] = useState("");
+
+  // Producto seleccionado para edición
   const [productoEditando, setProductoEditando] = useState(null);
 
+  /**
+   * Buscar un producto por ID.
+   * Limpia estados previos y muestra mensajes claros según el resultado.
+   */
   async function buscarPorId(id) {
     if (!id) return;
+
     setError("");
     setResultadoBusqueda(null);
     setProductoEditando(null);
@@ -29,13 +55,21 @@ export default function AdminProductList() {
     }
   }
 
+  /**
+   * Acción del formulario de búsqueda.
+   */
   async function handleBuscarPorId(e) {
     e.preventDefault();
     await buscarPorId(busquedaId);
   }
 
+  /**
+   * Eliminar producto por ID.
+   * Tras eliminar, limpia resultados visibles.
+   */
   async function handleEliminar(id) {
     if (!window.confirm("¿Eliminar este producto?")) return;
+
     try {
       await eliminarProducto(id);
       setResultadoBusqueda(null);
@@ -45,6 +79,10 @@ export default function AdminProductList() {
     }
   }
 
+  /**
+   * Se ejecuta cuando termina de editar un producto.
+   * Recarga los datos del producto si se estaba buscando uno.
+   */
   function handleFinEdicion() {
     setProductoEditando(null);
     if (busquedaId) {
@@ -52,16 +90,18 @@ export default function AdminProductList() {
     }
   }
 
+  /**
+   * Render principal del módulo de productos.
+   */
   return (
     <div className="admin-products-page">
+
+      {/* ------------------------ TARJETA: BUSCAR POR ID ------------------------ */}
       <div className="admin-products-card">
         <h2 className="admin-products-title">Productos</h2>
 
-        {/* Buscar por ID */}
-        <form
-          className="admin-products-search"
-          onSubmit={handleBuscarPorId}
-        >
+        {/* Formulario de búsqueda por ID */}
+        <form className="admin-products-search" onSubmit={handleBuscarPorId}>
           <input
             type="number"
             className="admin-products-input"
@@ -69,14 +109,13 @@ export default function AdminProductList() {
             onChange={(e) => setBusquedaId(e.target.value)}
             placeholder="Buscar producto por ID"
           />
-          <button type="submit" className="btn-nl">
-            Buscar
-          </button>
+          <button type="submit" className="btn-nl">Buscar</button>
         </form>
 
+        {/* Mostrar error si el ID no existe */}
         {error && <p className="admin-products-error">{error}</p>}
 
-        {/* Resultado de la búsqueda */}
+        {/* ------------------------ RESULTADO DE LA BÚSQUEDA ------------------------ */}
         {resultadoBusqueda && (
           <div className="admin-products-result">
             <table className="admin-products-table">
@@ -90,6 +129,7 @@ export default function AdminProductList() {
                   <th>Acciones</th>
                 </tr>
               </thead>
+
               <tbody>
                 <tr>
                   <td>{resultadoBusqueda.id}</td>
@@ -105,6 +145,7 @@ export default function AdminProductList() {
                     >
                       Editar
                     </button>
+
                     <button
                       type="button"
                       className="btn-nl btn-nl-danger"
@@ -120,7 +161,7 @@ export default function AdminProductList() {
         )}
       </div>
 
-      {/* Crear producto */}
+      {/* ------------------------ TARJETA: CREAR NUEVO PRODUCTO ------------------------ */}
       <div className="admin-products-card">
         <CrearProducto
           modo="crear"
@@ -130,7 +171,7 @@ export default function AdminProductList() {
         />
       </div>
 
-      {/* Editar producto */}
+      {/* ------------------------ TARJETA: EDITAR PRODUCTO ------------------------ */}
       {productoEditando && (
         <div className="admin-products-card">
           <CrearProducto
@@ -138,6 +179,7 @@ export default function AdminProductList() {
             productoInicial={productoEditando}
             onFinish={handleFinEdicion}
           />
+
           <button
             type="button"
             className="btn-nl btn-nl-secondary admin-products-cancel"

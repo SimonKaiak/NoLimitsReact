@@ -1,15 +1,47 @@
-// Ruta: src/services/tiposProducto.js
+// ======================================================================
+// Servicio: tiposProducto.js
+// Maneja todas las operaciones CRUD relacionadas con "Tipo de Producto".
+// Ejemplos: Películas, Videojuegos, Accesorios, Libros, etc.
+//
+// Todos los métodos usan fetch() y siguen la estructura general del backend.
+// ======================================================================
 
+
+
+// ----------------------------------------------------------------------
+// API_BASE:
+// ----------------------------------------------------------------------
 const API_BASE =
   import.meta.env.VITE_API_URL ||
   "https://nolimits-backend-final.onrender.com";
 
+
+// ----------------------------------------------------------------------
+// API_URL:
+// Ruta base para todos los endpoints del recurso "tipo-productos".
+// ----------------------------------------------------------------------
 const API_URL = `${API_BASE}/api/v1/tipo-productos`;
 
-// LISTAR + BUSCAR
+
+
+/* ======================================================================
+   LISTAR TIPOS DE PRODUCTO
+   GET  /api/v1/tipo-productos
+   GET  /api/v1/tipo-productos/buscar?nombre={texto}
+
+   Parámetros:
+     - page (actualmente ignorado, backend no pagina)
+     - search → texto para buscar por nombre
+
+   Lógica:
+      Si viene texto, usamos endpoint /buscar.
+      Si no, traemos todos los tipos de producto.
+
+   Devuelve: lista JSON.
+   ====================================================================== */
 export async function listarTiposProducto(page = 1, search = "") {
 
-  // Si hay búsqueda → usamos endpoint /buscar
+  // Si hay texto de búsqueda → usamos el endpoint especial /buscar
   const url = search && search.trim()
     ? `${API_URL}/buscar?nombre=${encodeURIComponent(search.trim())}`
     : API_URL;
@@ -25,7 +57,17 @@ export async function listarTiposProducto(page = 1, search = "") {
   return await res.json();
 }
 
-// CREAR
+
+
+/* ======================================================================
+   CREAR TIPO DE PRODUCTO
+   POST  /api/v1/tipo-productos
+
+   payload debe tener el formato:
+     { nombre: "Videojuegos" }
+
+   Si algo falla, lanzamos error con el texto del backend.
+   ====================================================================== */
 export async function crearTipoProducto(payload) {
   const res = await fetch(API_URL, {
     method: "POST",
@@ -42,7 +84,15 @@ export async function crearTipoProducto(payload) {
   return res.json();
 }
 
-// PUT
+
+
+/* ======================================================================
+   EDITAR (PUT)
+   PUT  /api/v1/tipo-productos/{id}
+
+   Reemplaza todos los datos del tipo de producto con el contenido del payload.
+   Es una actualización completa.
+   ====================================================================== */
 export async function editarTipoProducto(id, payload) {
   const res = await fetch(`${API_URL}/${id}`, {
     method: "PUT",
@@ -59,7 +109,15 @@ export async function editarTipoProducto(id, payload) {
   return res.json();
 }
 
-// PATCH
+
+
+/* ======================================================================
+   PATCH (ACTUALIZACIÓN PARCIAL)
+   PATCH  /api/v1/tipo-productos/{id}
+
+   Solo actualiza los campos enviados en payloadParcial.
+   Ideal para cambios pequeños como renombrar.
+   ====================================================================== */
 export async function patchTipoProducto(id, payloadParcial) {
   const res = await fetch(`${API_URL}/${id}`, {
     method: "PATCH",
@@ -76,7 +134,15 @@ export async function patchTipoProducto(id, payloadParcial) {
   return res.json();
 }
 
-// ELIMINAR
+
+
+/* ======================================================================
+   ELIMINAR
+   DELETE  /api/v1/tipo-productos/{id}
+
+   Elimina el tipo de producto.
+   Devuelve true si fue exitoso.
+   ====================================================================== */
 export async function eliminarTipoProducto(id) {
   const res = await fetch(`${API_URL}/${id}`, {
     method: "DELETE",
@@ -91,7 +157,15 @@ export async function eliminarTipoProducto(id) {
   return true;
 }
 
-// OBTENER POR ID
+
+
+/* ======================================================================
+   OBTENER POR ID
+   GET  /api/v1/tipo-productos/{id}
+
+   Permite cargar un tipo de producto específico,
+   por ejemplo para editarlo.
+   ====================================================================== */
 export async function obtenerTipoProducto(id) {
   const res = await fetch(`${API_URL}/${id}`);
 

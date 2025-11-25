@@ -7,7 +7,7 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-image: url("/public/fondo1.webp");
+  background-image: url("../assets/img/fondos/fondo1.webp");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

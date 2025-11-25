@@ -1,22 +1,62 @@
+// Ruta: src/pages/admin/AdminMetodoPagoList.jsx
+
 import React, { useEffect, useState } from "react";
 import { ButtonAction } from "../../components/atoms/ButtonAction.jsx";
 import CrearMetodoPago from "../../components/organisms/CrearMetodoPago";
 import { listarMetodosPago, eliminarMetodoPago, obtenerMetodoPago } from "../../services/metodosPago";
 
+/**
+ * AdminMetodoPagoList
+ *
+ * Página para la administración de los Métodos de Pago.
+ * Permite realizar operaciones CRUD:
+ * - Buscar métodos de pago.
+ * - Crear nuevos métodos.
+ * - Editar métodos existentes.
+ * - Eliminar métodos registrados.
+ *
+ * También incorpora paginación y usa un modal para crear/editar.
+ */
 export default function AdminMetodoPagoList() {
 
+    // Lista actual de métodos de pago obtenidos desde el backend
     const [metodos, setMetodos] = useState([]);
+
+    // Filtro real aplicado a la búsqueda
     const [busqueda, setBusqueda] = useState("");
-    const [pagina, setPagina] = useState(1);
-    const [totalPaginas, setTotalPaginas] = useState(1);
-    const [loading, setLoading] = useState(false);
-    const [modalData, setModalData] = useState(null);
+
+    // Valor temporal que el usuario escribe en el input
     const [busquedaTemp, setBusquedaTemp] = useState("");
 
+    // Página actual para la paginación
+    const [pagina, setPagina] = useState(1);
+
+    // Total de páginas entregado por el backend
+    const [totalPaginas, setTotalPaginas] = useState(1);
+
+    // Estado de carga
+    const [loading, setLoading] = useState(false);
+
+    // Control del modal (crear o editar)
+    const [modalData, setModalData] = useState(null);
+
+    /**
+     * useEffect
+     * Se ejecuta cada vez que cambian:
+     * - la página
+     * - el filtro de búsqueda
+     *
+     * Esto asegura que la tabla se actualice automáticamente.
+     */
     useEffect(() => {
         cargarMetodos();
     }, [pagina, busqueda]);
 
+
+    /**
+     * Cargar los métodos de pago desde el backend
+     * aplicando paginación y filtro.
+     */
     async function cargarMetodos() {
         setLoading(true);
 
@@ -33,12 +73,20 @@ export default function AdminMetodoPagoList() {
         setLoading(false);
     }
 
+
+    /**
+     * Eliminar un método de pago.
+     * Solicita confirmación, y luego actualiza la lista.
+     */
     const handleEliminar = async (id) => {
         if (!window.confirm("¿Eliminar método de pago?")) return;
 
         try {
             await eliminarMetodoPago(id);
+
+            // eliminamos localmente sin recargar toda la lista
             setMetodos((prev) => prev.filter((m) => m.id !== id));
+
             alert("Método eliminado!");
 
         } catch (err) {
@@ -46,13 +94,18 @@ export default function AdminMetodoPagoList() {
         }
     };
 
+
+    /**
+     * Abrir el modal en modo edición.
+     * Primero se obtiene el método desde el backend para asegurar datos actualizados.
+     */
     const abrirModalEditar = async (fila) => {
         try {
             const metodo = await obtenerMetodoPago(fila.id);
 
             setModalData({
                 modo: "editar",
-                metodo
+                metodo,
             });
 
         } catch (err) {
@@ -60,6 +113,10 @@ export default function AdminMetodoPagoList() {
         }
     };
 
+
+    /**
+     * Render del componente principal.
+     */
     return (
         <div className="admin-wrapper">
 
@@ -73,39 +130,43 @@ export default function AdminMetodoPagoList() {
                     value={busquedaTemp}
                     onChange={(e) => setBusquedaTemp(e.target.value)}
                     className="admin-input"
-                    />
+                />
 
-                    <ButtonAction 
+                <ButtonAction
                     text="Buscar"
                     onClick={() => {
+                        // el filtro real se aplica solo al presionar buscar
                         setBusqueda(busquedaTemp);
                         setPagina(1);
                     }}
-                    />
-            </div>
-
-            {/* Crear */}
-            <div className="admin-form">
-                <ButtonAction
-                    text="Crear Método de Pago"
-                    onClick={() => setModalData({ modo: "crear", metodo: null })}
                 />
             </div>
 
-            {/* Modal */}
+            {/* Crear nuevo método */}
+            <div className="admin-form">
+                <ButtonAction
+                    text="Crear Método de Pago"
+                    onClick={() =>
+                        setModalData({ modo: "crear", metodo: null })
+                    }
+                />
+            </div>
+
+            {/* Modal Crear/Editar */}
             {modalData && (
                 <CrearMetodoPago
                     modo={modalData.modo}
                     metodo={modalData.metodo}
                     onCerrar={() => {
                         setModalData(null);
-                        cargarMetodos();
+                        cargarMetodos(); // recarga al cerrar
                     }}
                 />
             )}
 
-            {/* Tabla */}
+            {/* Tabla de resultados */}
             <table className="admin-table">
+
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -116,11 +177,23 @@ export default function AdminMetodoPagoList() {
                 </thead>
 
                 <tbody>
+
+                    {/* Estado cargando */}
                     {loading ? (
-                        <tr><td colSpan="4" className="admin-msg">Cargando...</td></tr>
+                        <tr>
+                            <td colSpan="4" className="admin-msg">Cargando...</td>
+                        </tr>
+
                     ) : metodos.length === 0 ? (
-                        <tr><td colSpan="4" className="admin-msg">No hay resultados</td></tr>
+
+                        /* Sin resultados */
+                        <tr>
+                            <td colSpan="4" className="admin-msg">No hay resultados</td>
+                        </tr>
+
                     ) : (
+
+                        /* Mostrar resultados */
                         metodos.map((m) => (
                             <tr key={m.id}>
                                 <td>{m.id}</td>
@@ -134,11 +207,13 @@ export default function AdminMetodoPagoList() {
                             </tr>
                         ))
                     )}
+
                 </tbody>
             </table>
 
             {/* Paginación */}
             <div className="admin-pagination">
+
                 <ButtonAction
                     text="Anterior"
                     disabled={pagina <= 1}
@@ -154,6 +229,7 @@ export default function AdminMetodoPagoList() {
                     disabled={pagina >= totalPaginas}
                     onClick={() => setPagina((p) => p + 1)}
                 />
+
             </div>
         </div>
     );

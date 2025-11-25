@@ -1,16 +1,30 @@
+// Se importa React para poder usar componentes y JSX
 import React from "react";
 
 /**
- * Componente reutilizable de botón de envío.
- * 
- * @param {string} text - Texto que se mostrará dentro del botón.
- * 
- * Este componente permite mantener un diseño y comportamiento
- * consistentes en todos los formularios de la aplicación.
+ * Componente ButtonSubmit
+ *
+ * Este es un botón reutilizable pensado para formularios.
+ * Permite mantener un estilo y comportamiento uniforme
+ * en todas las partes de la aplicación donde se necesite
+ * un botón para enviar datos.
+ *
+ * Parámetros (props):
+ *  - text: texto que se mostrará dentro del botón.
+ *  - onClick: función que se ejecutará cuando el usuario haga click.
+ *  - className: clases adicionales para aplicar estilos personalizados.
  */
-
 export const ButtonSubmit = ({ text, onClick, className = "" }) => {
-    return (
-        <button onClick={onClick} className={className}>{text}</button>
-    );
+  return (
+    <button
+      // Función que se ejecuta cuando se hace click
+      onClick={onClick}
+
+      // Clases opcionales para los estilos del botón
+      className={className}
+    >
+      {/* Texto que aparece dentro del botón */}
+      {text}
+    </button>
+  );
 };

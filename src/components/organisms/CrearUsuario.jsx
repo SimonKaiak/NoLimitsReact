@@ -1,13 +1,30 @@
-// Ruta: src/components/organisms/CrearUsuario.jsx
-
+// Importamos React y useState/useEffect para manejar estado y cargar datos
 import React, { useEffect, useState } from "react";
+
+// Funciones del backend para crear o editar usuarios
 import { crearUsuario, editarUsuario } from "../../services/usuarios";
 
+/**
+ * Componente CrearUsuario
+ *
+ * Permite:
+ *  - Crear un usuario nuevo
+ *  - Editar un usuario existente
+ *
+ * Props:
+ *  - modo: "crear" o "editar"
+ *  - usuarioInicial: datos del usuario cuando se edita
+ *  - onFinish: función que se ejecuta al guardar
+ */
 export default function CrearUsuario({
-  modo = "crear",         // "crear" | "editar"
-  usuarioInicial = null,  // objeto Usuario cuando editas
-  onFinish,               // callback después de crear/editar
+  modo = "crear",
+  usuarioInicial = null,
+  onFinish,
 }) {
+  /**
+   * formData almacena los valores del formulario.
+   * Se inicializa vacío y luego, si se edita, se cargan los valores existentes.
+   */
   const [formData, setFormData] = useState({
     nombre: "",
     apellidos: "",
@@ -17,8 +34,18 @@ export default function CrearUsuario({
     rolId: "",
   });
 
+  // Mensaje de error para mostrar fallas del backend
   const [error, setError] = useState("");
 
+  /**
+   * useEffect
+   *
+   * Cuando usuarioInicial cambia:
+   *  - Si existe, llenamos el formulario con esos datos.
+   *  - Si no existe (modo crear), dejamos todo vacío.
+   *
+   * En edición, la contraseña NO se carga porque es un campo "WRITE_ONLY".
+   */
   useEffect(() => {
     if (usuarioInicial) {
       setFormData({
@@ -26,7 +53,7 @@ export default function CrearUsuario({
         apellidos: usuarioInicial.apellidos ?? "",
         correo: usuarioInicial.correo ?? "",
         telefono: usuarioInicial.telefono ?? "",
-        password: "", // no viene desde el back (WRITE_ONLY)
+        password: "", // nunca se trae desde el backend
         rolId: usuarioInicial.rol?.id ?? "",
       });
     } else {
@@ -41,10 +68,26 @@ export default function CrearUsuario({
     }
   }, [usuarioInicial, modo]);
 
+  /**
+   * handleChange
+   *
+   * Actualiza el estado formData cuando el usuario escribe en un input.
+   */
   function handleChange(e) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   }
 
+  /**
+   * handleSubmit
+   *
+   * - Evita recargar la página
+   * - Limpia errores anteriores
+   * - Construye el objeto `payload` para enviar al backend
+   * - En modo crear: SIEMPRE se manda password
+   * - En modo editar: solo se manda password si el usuario escribe algo nuevo
+   * - Llama al servicio según el modo
+   * - Ejecuta onFinish al terminar
+   */
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -57,8 +100,8 @@ export default function CrearUsuario({
       rol: { id: Number(formData.rolId) },
     };
 
-    // En creación SIEMPRE mandamos password.
-    // En edición, solo si escribes algo.
+    // En creación siempre se requiere password.
+    // En edición solo se envía si no está vacío.
     if (modo === "crear" || formData.password.trim() !== "") {
       payload.password = formData.password;
     }
@@ -71,14 +114,27 @@ export default function CrearUsuario({
       }
 
       if (onFinish) onFinish();
+
     } catch (err) {
       console.error(err);
       setError("Error al guardar usuario: " + err.message);
     }
   }
 
+  /**
+   * Render del formulario.
+   *
+   * Incluye:
+   *  - Campos de texto (nombre, apellidos)
+   *  - Correo
+   *  - Teléfono
+   *  - Contraseña (obligatoria solo al crear)
+   *  - ID de rol
+   *  - Botón de guardar
+   */
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
+      {/* Mensaje de error global */}
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       <div className="admin-form-row">

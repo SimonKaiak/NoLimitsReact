@@ -9,60 +9,109 @@ import {
   obtenerEmpresa,
 } from "../../services/empresas";
 
+/**
+ * AdminEmpresaList
+ *
+ * Pantalla de administración para gestionar empresas.
+ * Permite:
+ * - Listar empresas
+ * - Buscar por nombre
+ * - Crear nuevas empresas
+ * - Editar empresas existentes
+ * - Eliminar empresas
+ *
+ * El backend aún no tiene paginación real, por lo que se simula con 1 página.
+ */
 export default function AdminEmpresaList() {
+  // Lista total que muestra la tabla
   const [empresas, setEmpresas] = useState([]);
 
-  // texto que escribe el usuario
+  // Texto escrito por el usuario (input controlado)
   const [busquedaInput, setBusquedaInput] = useState("");
-  // filtro real aplicado al cargar
+
+  // Filtro aplicado realmente al cargar datos
   const [filtroBusqueda, setFiltroBusqueda] = useState("");
 
+  // Página actual (placeholder)
   const [pagina, setPagina] = useState(1);
+
+  // Total de páginas (por ahora fijo a 1)
   const [totalPaginas, setTotalPaginas] = useState(1);
+
+  // Estado de carga
   const [loading, setLoading] = useState(false);
+
+  // Datos para abrir el modal (crear/editar)
   const [modalData, setModalData] = useState(null);
 
+  /**
+   * Carga empresas cada vez que cambie la página o el filtro real.
+   */
   useEffect(() => {
     cargarEmpresas(filtroBusqueda);
   }, [pagina, filtroBusqueda]);
 
+  /**
+   * Función que obtiene los datos desde el backend.
+   * El parámetro "filtro" es aplicado al nombre.
+   */
   async function cargarEmpresas(filtro = "") {
     setLoading(true);
     try {
       const data = await listarEmpresas(pagina, filtro);
+
+      // Backend puede devolver lista directa o {contenido: [...]}
       setEmpresas(Array.isArray(data) ? data : data.contenido || []);
-      setTotalPaginas(1); // por ahora fijo, el back no pagina
+
+      // Por ahora no hay paginación real
+      setTotalPaginas(1);
     } catch (err) {
       console.error(err);
-      alert("❌ Error al cargar empresas");
+      alert("Error al cargar empresas");
     }
     setLoading(false);
   }
 
+  /**
+   * Aplica la búsqueda cuando se presiona el botón.
+   * El usuario puede escribir sin recargar hasta hacer click.
+   */
   const handleBuscarClick = () => {
     setPagina(1);
-    setFiltroBusqueda(busquedaInput); // aquí recién aplicas la búsqueda
+    setFiltroBusqueda(busquedaInput);
   };
 
+  /**
+   * Elimina una empresa por ID.
+   * Luego refresca la tabla sin recargar toda la lista.
+   */
   const handleEliminar = async (id) => {
     if (!window.confirm("¿Eliminar empresa?")) return;
+
     try {
       await eliminarEmpresa(id);
+
+      // Actualizamos la lista local quitando ese registro
       setEmpresas((prev) => prev.filter((e) => e.id !== id));
-      alert("Empresa eliminada!");
+
+      alert("Empresa eliminada");
     } catch (err) {
       console.error(err);
-      alert("❌ Error al eliminar");
+      alert("Error al eliminar empresa");
     }
   };
 
+  /**
+   * Abre el modal de edición:
+   * Primero obtiene todos los datos de la empresa seleccionada.
+   */
   const abrirModalEditar = async (row) => {
     try {
       const empresa = await obtenerEmpresa(row.id);
       setModalData({ modo: "editar", empresa });
     } catch (err) {
       console.error(err);
-      alert("❌ Error al obtener empresa");
+      alert("Error al obtener empresa");
     }
   };
 
@@ -79,10 +128,11 @@ export default function AdminEmpresaList() {
           onChange={(e) => setBusquedaInput(e.target.value)}
           className="admin-input"
         />
+
         <ButtonAction text="Buscar" onClick={handleBuscarClick} />
       </div>
 
-      {/* Crear */}
+      {/* Botón crear */}
       <div className="admin-form">
         <ButtonAction
           text="Crear Empresa"
@@ -90,7 +140,7 @@ export default function AdminEmpresaList() {
         />
       </div>
 
-      {/* Modal */}
+      {/* Modal Crear/Editar */}
       {modalData && (
         <CrearEmpresa
           modo={modalData.modo}
@@ -102,7 +152,7 @@ export default function AdminEmpresaList() {
         />
       )}
 
-      {/* Tabla */}
+      {/* Tabla principal */}
       <table className="admin-table">
         <thead>
           <tr>
@@ -114,29 +164,34 @@ export default function AdminEmpresaList() {
         </thead>
 
         <tbody>
+          {/* Estado cargando */}
           {loading ? (
             <tr>
-              <td colSpan="4" className="admin-msg">
-                Cargando...
-              </td>
+              <td colSpan="4" className="admin-msg">Cargando...</td>
             </tr>
+
           ) : empresas.length === 0 ? (
+
+            // No hay datos
             <tr>
-              <td colSpan="4" className="admin-msg">
-                No hay resultados
-              </td>
+              <td colSpan="4" className="admin-msg">No hay resultados</td>
             </tr>
+
           ) : (
+
+            // Listado real
             empresas.map((e) => (
               <tr key={e.id}>
                 <td>{e.id}</td>
                 <td>{e.nombre}</td>
                 <td>{e.activo ? "Sí" : "No"}</td>
+
                 <td className="admin-actions">
                   <ButtonAction
                     text="Editar"
                     onClick={() => abrirModalEditar(e)}
                   />
+
                   <ButtonAction
                     text="Eliminar"
                     onClick={() => handleEliminar(e.id)}
@@ -155,9 +210,11 @@ export default function AdminEmpresaList() {
           disabled={pagina <= 1}
           onClick={() => setPagina((p) => p - 1)}
         />
+
         <span className="admin-page-info">
           Página {pagina} / {totalPaginas}
         </span>
+
         <ButtonAction
           text="Siguiente"
           disabled={pagina >= totalPaginas}

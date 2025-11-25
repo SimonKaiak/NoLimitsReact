@@ -1,26 +1,35 @@
-// Ruta: src/components/atoms/AdminNavbar.jsx
+// Se importa React para poder usar componentes
+import React from "react";
+// Se importa useState para manejar estados dentro del componente
 import { useState } from "react";
+// Se importa useNavigate para cambiar la ruta en la aplicación
 import { useNavigate } from "react-router-dom";
 
 export default function AdminNavbar() {
+  // Se obtiene la función navigate, que permite movernos entre páginas
   const navigate = useNavigate();
+
+  // menuOpen indica si el menú lateral está abierto o cerrado
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Controla si el submenú de Catálogos está abierto
+  // openCatalogos indica si el submenú "Catálogos" está desplegado o no
   const [openCatalogos, setOpenCatalogos] = useState(false);
 
+  // Función para navegar a otra ruta
+  // También cierra el menú y el submenú para mantener todo ordenado
   const go = (path) => {
     navigate(path);
     setMenuOpen(false);
-    setOpenCatalogos(false); // cierra el submenú cuando se navega
+    setOpenCatalogos(false);
   };
 
   return (
     <>
+      {/* Barra superior */}
       <nav className="nl-nav">
         <div className="nl-nav-inner">
 
-          {/* IZQUIERDA → HAMBURGUESA */}
+          {/* Parte izquierda: botón hamburguesa que abre el menú lateral */}
           <div className="nl-left">
             <button
               className="btn_in"
@@ -30,31 +39,32 @@ export default function AdminNavbar() {
             </button>
           </div>
 
-          {/* CENTRO */}
+          {/* Título de la marca en el centro */}
           <h1 id="brand">°-._ NoLimits _.-°</h1>
 
-          {/* DERECHA VACÍA */}
+          {/* Parte derecha vacía (solo mantiene estructura simétrica) */}
           <div className="nl-right"></div>
         </div>
       </nav>
 
-      {/* PANEL LATERAL */}
+      {/* Menú lateral visible solo cuando menuOpen es true */}
       {menuOpen && (
         <div className="admin-sidebar">
 
+          {/* Cabecera del menú lateral con botón para cerrarlo */}
           <div className="admin-sidebar-header">
             <button onClick={() => setMenuOpen(false)}>✖</button>
           </div>
 
-          {/* BOTÓN PRODUCTOS */}
+          {/* Botón para ir a la sección Productos */}
           <button onClick={() => go("/admin/productos")}>- Productos -</button>
 
-          {/* BOTÓN CATÁLOGOS → DESPLEGABLE */}
+          {/* Botón que despliega o cierra el submenú "Catálogos" */}
           <button onClick={() => setOpenCatalogos(!openCatalogos)}>
             {openCatalogos ? "▼ Catálogos -" : "- Catálogos -"}
           </button>
 
-          {/* SUBMENÚ DE CATÁLOGOS */}
+          {/* Submenú de Catálogos, solo se muestra si openCatalogos es true */}
           {openCatalogos && (
             <div className="submenu-catalogos">
               <button onClick={() => go("/admin/tipos-producto")}>Tipos de Producto</button>
@@ -64,7 +74,7 @@ export default function AdminNavbar() {
               <button onClick={() => go("/admin/plataformas")}>Plataformas</button>
               <button onClick={() => go("/admin/empresas")}>Empresas</button>
 
-              {/* 👉 NUEVOS */}
+              {/* Nuevos botones agregados al catálogo */}
               <button onClick={() => go("/admin/tipos-empresa")}>Tipos de Empresa</button>
               <button onClick={() => go("/admin/desarrolladores")}>Desarrolladores</button>
               <button onClick={() => go("/admin/tipos-desarrollador")}>Tipos de Desarrollador</button>
@@ -74,10 +84,11 @@ export default function AdminNavbar() {
             </div>
           )}
 
-          {/* BOTONES RESTANTES */}
+          {/* Más botones del menú lateral */}
           <button onClick={() => go("/admin/usuarios")}>- Usuarios -</button>
           <button onClick={() => go("/admin/ventas")}>- Ventas -</button>
 
+          {/* Botón para salir del panel de administración */}
           <button
             style={{
               marginTop: "20px",

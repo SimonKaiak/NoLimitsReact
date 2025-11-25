@@ -4,60 +4,113 @@ import { ButtonAction } from "../../components/atoms/ButtonAction.jsx";
 import CrearEstado from "../../components/organisms/CrearEstado";
 import { listarEstados, eliminarEstado, obtenerEstado } from "../../services/estados";
 
+/**
+ * AdminEstadoList
+ *
+ * Esta página permite administrar los estados del sistema.
+ * Un estado puede ser algo como: "Pendiente", "Pagado", "Enviado", etc.
+ *
+ * Desde aquí puedes:
+ * - Listar todos los estados
+ * - Buscar por nombre
+ * - Crear un nuevo estado
+ * - Editar uno existente
+ * - Eliminar un estado
+ */
 export default function AdminEstadoList() {
 
+  // Lista de estados que se muestra en la tabla
   const [estados, setEstados] = useState([]);
+
+  // Texto que el usuario escribe en el input del buscador
   const [busquedaInput, setBusquedaInput] = useState("");
+
+  // Filtro real aplicado para buscar (solo cambia cuando se presiona "Buscar")
   const [filtroBusqueda, setFiltroBusqueda] = useState("");
 
+  // Página actual (por ahora siempre 1 porque el backend no pagina)
   const [pagina, setPagina] = useState(1);
+
+  // Total de páginas (simulado)
   const [totalPaginas, setTotalPaginas] = useState(1);
+
+  // Indica si se está esperando respuesta del backend
   const [loading, setLoading] = useState(false);
 
+  // Información para abrir el modal y saber si es crear o editar
   const [modalData, setModalData] = useState(null);
 
+  /**
+   * Cada vez que cambie la página o el filtro, cargamos los estados.
+   */
   useEffect(() => {
     cargarEstados(filtroBusqueda);
   }, [pagina, filtroBusqueda]);
 
+  /**
+   * Función que llama al backend para obtener los estados.
+   * Si el backend devuelve un objeto con "contenido", se usa ese.
+   * Si devuelve una lista directa, también se acepta.
+   */
   async function cargarEstados(filtro = "") {
     setLoading(true);
+
     try {
       const data = await listarEstados(pagina, filtro);
+
+      // Soporte para dos formas de respuesta
       setEstados(Array.isArray(data) ? data : data.contenido || []);
+
+      // El backend no está paginando, así que se mantiene 1.
       setTotalPaginas(1);
+
     } catch (err) {
-      alert("❌ Error al cargar estados");
+      alert("Error al cargar estados");
     }
+
     setLoading(false);
   }
 
+  /**
+   * Aplica realmente el filtro cuando el usuario presiona el botón Buscar.
+   */
   const handleBuscarClick = () => {
     setPagina(1);
     setFiltroBusqueda(busquedaInput);
   };
 
+  /**
+   * Elimina un estado por ID.
+   * Antes pide confirmación al usuario.
+   */
   const handleEliminar = async (id) => {
     if (!window.confirm("¿Eliminar estado?")) return;
 
     try {
       await eliminarEstado(id);
+
+      // Actualizamos la lista eliminando el estado borrado sin recargar todo
       setEstados((prev) => prev.filter((e) => e.id !== id));
-      alert("Estado eliminado!");
+
+      alert("Estado eliminado");
     } catch (err) {
-      alert("❌ Error al eliminar");
+      alert("Error al eliminar estado");
     }
   };
 
+  /**
+   * Abre el modal de edición.
+   * Primero trae del backend todos los datos del estado.
+   */
   const abrirModalEditar = async (fila) => {
     try {
       const est = await obtenerEstado(fila.id);
       setModalData({
         modo: "editar",
-        estado: est
+        estado: est,
       });
     } catch {
-      alert("❌ Error al obtener estado");
+      alert("Error al obtener estado");
     }
   };
 
@@ -66,7 +119,7 @@ export default function AdminEstadoList() {
 
       <h1 className="admin-title">Gestionar Estados</h1>
 
-      {/* BUSCADOR */}
+      {/* Buscador */}
       <div className="admin-form">
         <input
           type="text"
@@ -75,27 +128,36 @@ export default function AdminEstadoList() {
           onChange={(e) => setBusquedaInput(e.target.value)}
           className="admin-input"
         />
+
         <ButtonAction text="Buscar" onClick={handleBuscarClick} />
       </div>
 
+      {/* Botón crear estado */}
       <div className="admin-form">
         <ButtonAction
           text="Crear Estado"
-          onClick={() => setModalData({ modo: "crear", estado: null })}
+          onClick={() => setModalData({
+            modo: "crear",
+            estado: null,
+          })}
         />
       </div>
 
+      {/* Modal Crear o Editar */}
       {modalData && (
         <CrearEstado
           modo={modalData.modo}
           estado={modalData.estado}
           onCerrar={() => {
+            // Cerramos modal
             setModalData(null);
+            // Volvemos a recargar respetando el filtro actual
             cargarEstados(filtroBusqueda);
           }}
         />
       )}
 
+      {/* Tabla principal */}
       <table className="admin-table">
         <thead>
           <tr>
@@ -107,16 +169,28 @@ export default function AdminEstadoList() {
         </thead>
 
         <tbody>
+          {/* Estado: cargando */}
           {loading ? (
-            <tr><td colSpan="4" className="admin-msg">Cargando...</td></tr>
+            <tr>
+              <td colSpan="4" className="admin-msg">Cargando...</td>
+            </tr>
+
           ) : estados.length === 0 ? (
-            <tr><td colSpan="4" className="admin-msg">No hay resultados</td></tr>
+
+            // No hay registros
+            <tr>
+              <td colSpan="4" className="admin-msg">No hay resultados</td>
+            </tr>
+
           ) : (
+
+            // Mostrar registros
             estados.map((e) => (
               <tr key={e.id}>
                 <td>{e.id}</td>
                 <td>{e.nombre}</td>
                 <td>{e.activo ? "Sí" : "No"}</td>
+
                 <td className="admin-actions">
                   <ButtonAction text="Editar" onClick={() => abrirModalEditar(e)} />
                   <ButtonAction text="Eliminar" onClick={() => handleEliminar(e.id)} />

@@ -1,9 +1,11 @@
-// ✅ Ruta: src/App.jsx
+// Ruta: src/App.jsx
+// Componente principal que define el ruteo, el layout general y el control
+// de autenticación y autorización para secciones públicas, de usuario y de administrador.
 
 import { useEffect } from "react";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 
-// Layouts
+// Layouts globales
 import NavbarNL from "./components/organisms/Navbar.jsx";
 import FooterNL from "./components/organisms/Footer.jsx";
 
@@ -21,13 +23,13 @@ import PerfilUsuario from "./pages/PerfilUsuario.jsx";
 import EditarPerfil from "./pages/EditarPerfil.jsx";
 import MisCompras from "./pages/MisCompras.jsx";
 
-// ADMIN – Dashboard
+// Administrador – Dashboard
 import AdminHome from "./pages/admin/AdminHome.jsx";
 
-// ADMIN – Productos
+// Administrador – Productos
 import AdminProductList from "./pages/admin/AdminProductList.jsx";
 
-// ADMIN – Catálogos
+// Administrador – Catálogos
 import AdminTipoProductoList from "./pages/admin/AdminTipoProductoList.jsx";
 import AdminClasificacionList from "./pages/admin/AdminClasificacionList.jsx";
 import AdminEstadoList from "./pages/admin/AdminEstadoList.jsx";
@@ -39,11 +41,11 @@ import AdminCatalogos from "./pages/admin/AdminCatalogos.jsx";
 import AdminTipoEmpresaList from "./pages/admin/AdminTipoEmpresaList.jsx";
 import AdminTipoDesarrolladorList from "./pages/admin/AdminTipoDesarrolladorList.jsx";
 
-// ADMIN – Métodos
+// Administrador – Métodos
 import AdminMetodoPago from "./pages/admin/AdminMetodoPago.jsx";
 import AdminMetodoEnvioList from "./pages/admin/AdminMetodoEnvioList.jsx";
 
-// ADMIN – Ventas
+// Administrador – Ventas
 import AdminVentasList from "./pages/admin/AdminVentasList.jsx";
 import AdminVentaDetalle from "./pages/admin/AdminVentasList.jsx";
 
@@ -52,10 +54,15 @@ import AdminUsuarioList from "./pages/admin/AdminUsuarioList.jsx";
 export default function App() {
   const { pathname } = useLocation();
 
-  // Sistema dinámico de clases CSS según la ruta
+  /**
+   * Control de clases CSS dinámicas según la ruta.
+   * Esto permite aplicar estilos globales específicos para distintas secciones,
+   * como login, admin o pantallas principales.
+   */
   useEffect(() => {
     const root = document.documentElement;
 
+    // Limpia clases previas
     root.classList.remove(
       "route-home",
       "route-login",
@@ -64,20 +71,30 @@ export default function App() {
       "route-admin"
     );
 
+    // Agrega clase correspondiente a la ruta actual
     if (pathname === "/login") root.classList.add("route-login");
     else if (pathname === "/registro") root.classList.add("route-register");
     else if (pathname === "/principal") root.classList.add("route-principal");
     else if (pathname.startsWith("/admin")) root.classList.add("route-admin");
     else root.classList.add("route-home");
 
+    // Asegura que cada cambio de ruta inicie arriba de la página
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [pathname]);
 
-  // Sistema de autenticación
+
+  /**
+   * Sistema de autenticación basado en localStorage.
+   * nl_auth = "1" indica sesión activa.
+   */
   const isLogged =
     typeof window !== "undefined" &&
     localStorage.getItem("nl_auth") === "1";
 
+  /**
+   * Rol del usuario según localStorage.
+   * nl_role = "ADMIN" da acceso a rutas protegidas de administración.
+   */
   const role =
     typeof window !== "undefined"
       ? localStorage.getItem("nl_role")
@@ -85,7 +102,10 @@ export default function App() {
 
   const isAdmin = isLogged && role === "ADMIN";
 
-  // Ocultar Navbar/Footer cuando se entra al Admin
+  /**
+   * Control para ocultar Navbar y Footer en rutas específicas
+   * como pantallas internas o de autenticación.
+   */
   const ocultarLayout =
     pathname === "/principal" ||
     pathname === "/olvide-contrasenia" ||
@@ -93,21 +113,21 @@ export default function App() {
 
   return (
     <>
+      {/* Navbar solo si la ruta lo permite */}
       {!ocultarLayout && <NavbarNL />}
 
       <main className="main-container">
         <Routes>
 
-          {/* 🌍 PÚBLICO */}
+          {/* Sección Pública */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/registro" element={<Registro />} />
           <Route path="/olvide-contrasenia" element={<ForgotPasswordPage />} />
           <Route path="/pago" element={<PaymentMethod />} />
           <Route path="/comprobante" element={<Comprobante />} />
-          
 
-          {/* 👤 USUARIO NORMAL */}
+          {/* Usuario normal */}
           <Route
             path="/principal"
             element={isLogged ? <Principal /> : <Navigate to="/login" replace />}
@@ -128,25 +148,25 @@ export default function App() {
             element={isLogged ? <MisCompras /> : <Navigate to="/login" replace />}
           />
 
-          {/* 🛠 ADMIN – HOME */}
+          {/* Administrador – Home */}
           <Route
             path="/admin"
             element={isAdmin ? <AdminHome /> : <Navigate to="/login" replace />}
           />
 
-          {/* 🛠 ADMIN – USUARIOS */}
+          {/* Administrador – Usuarios */}
           <Route
             path="/admin/usuarios"
             element={isAdmin ? <AdminUsuarioList /> : <Navigate to="/login" replace />}
           />
 
-          {/* 🛠 ADMIN – PRODUCTOS */}
+          {/* Administrador – Productos */}
           <Route
             path="/admin/productos"
             element={isAdmin ? <AdminProductList /> : <Navigate to="/login" replace />}
           />
 
-          {/* 🛠 ADMIN – CATÁLOGOS */}
+          {/* Administrador – Catálogos principales */}
           <Route
             path="/admin/catalogos"
             element={isAdmin ? <AdminCatalogos /> : <Navigate to="/login" replace />}
@@ -197,7 +217,7 @@ export default function App() {
             element={isAdmin ? <AdminTipoDesarrolladorList /> : <Navigate to="/login" replace />}
           />
 
-          {/* 🛠 ADMIN – MÉTODOS */}
+          {/* Administrador – Métodos */}
           <Route
             path="/admin/metodos-pago"
             element={isAdmin ? <AdminMetodoPago /> : <Navigate to="/login" replace />}
@@ -208,7 +228,7 @@ export default function App() {
             element={isAdmin ? <AdminMetodoEnvioList /> : <Navigate to="/login" replace />}
           />
 
-          {/* 🛠 ADMIN – VENTAS */}
+          {/* Administrador – Ventas */}
           <Route
             path="/admin/ventas"
             element={isAdmin ? <AdminVentasList /> : <Navigate to="/login" replace />}
@@ -222,6 +242,7 @@ export default function App() {
         </Routes>
       </main>
 
+      {/* Footer solo si corresponde */}
       {!ocultarLayout && <FooterNL />}
     </>
   );

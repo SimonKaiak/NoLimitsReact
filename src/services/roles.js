@@ -1,6 +1,27 @@
+// ======================================================================
+// Servicio: roles.js
+// Su trabajo es comunicarse con el backend para manejar roles de usuario.
+// Un "rol" es un permiso o categoría, como Administrador, Cliente, etc.
+// ======================================================================
+
+
+// ----------------------------------------------------------------------
+// API_URL
+// ----------------------------------------------------------------------
 const API_URL = "";
 
-// LISTAR paginado + búsqueda
+
+
+// ======================================================================
+// LISTAR ROLES (con paginación y búsqueda)
+// GET  /roles?page=X&search=texto
+//
+// Esta función obtiene una lista de roles desde el backend.
+// Es útil para pantallas grandes como el Administrador de Roles.
+//
+// page  número de página
+// search  texto para filtrar por nombre
+// ======================================================================
 export async function listarRoles(page = 1, search = "") {
     const res = await fetch(
         `${API_URL}/roles?page=${page}&search=${encodeURIComponent(search)}`
@@ -10,7 +31,17 @@ export async function listarRoles(page = 1, search = "") {
     return res.json();
 }
 
-// CREAR
+
+
+// ======================================================================
+// CREAR ROL
+// POST  /roles
+//
+// payload es un objeto con los datos del nuevo rol, por ejemplo:
+//   { nombre: "Administrador" }
+//
+// Si el servidor responde con error, lo mostramos de manera clara.
+// ======================================================================
 export async function crearRole(payload) {
     const res = await fetch(`${API_URL}/roles`, {
         method: "POST",
@@ -19,14 +50,21 @@ export async function crearRole(payload) {
     });
 
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Error al crear rol");
+        const error = await res.json().catch(() => null);
+        throw new Error(error?.message || "Error al crear rol");
     }
 
     return res.json();
 }
 
-// EDITAR (PUT)
+
+
+// ======================================================================
+// EDITAR ROL COMPLETO (PUT)
+// PUT /roles/{id}
+//
+// Se envía un objeto completo y se reemplaza el contenido original.
+// ======================================================================
 export async function editarRole(id, payload) {
     const res = await fetch(`${API_URL}/roles/${id}`, {
         method: "PUT",
@@ -35,14 +73,22 @@ export async function editarRole(id, payload) {
     });
 
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Error al editar rol");
+        const error = await res.json().catch(() => null);
+        throw new Error(error?.message || "Error al editar rol");
     }
 
     return res.json();
 }
 
-// PATCH 
+
+
+// ======================================================================
+// EDITAR PARCIAL (PATCH)
+// PATCH /roles/{id}
+//
+// Patch sirve para modificar solo una parte del rol.
+// Por ejemplo solo cambiar el nombre sin tocar el resto.
+// ======================================================================
 export async function patchRole(id, payloadParcial) {
     const res = await fetch(`${API_URL}/roles/${id}`, {
         method: "PATCH",
@@ -54,7 +100,15 @@ export async function patchRole(id, payloadParcial) {
     return res.json();
 }
 
-// ELIMINAR
+
+
+// ======================================================================
+// ELIMINAR UN ROL
+// DELETE /roles/{id}
+//
+// Si el servidor responde con estatus de error, avisamos.
+// Si todo sale bien, devolvemos true.
+// ======================================================================
 export async function eliminarRole(id) {
     const res = await fetch(`${API_URL}/roles/${id}`, {
         method: "DELETE"
@@ -64,35 +118,44 @@ export async function eliminarRole(id) {
     return true;
 }
 
-// OBTENER POR ID
+
+
+// ======================================================================
+// OBTENER UN ROL POR ID
+// GET /roles/{id}
+//
+// Devuelve la información completa de un rol específico.
+// ======================================================================
 export async function obtenerRole(id) {
     const res = await fetch(`${API_URL}/roles/${id}`);
+
     if (!res.ok) throw new Error("Error al obtener rol");
     return res.json();
 }
 
-/**
- * Obtiene todos los roles sin paginación. 
- * 
- * Paginación es una técnica para mostrar los datos de apoco en vez de cargar
- * todo de una sola vez, permitiendo así que las listas más grandes carguen más rapido
- * y no saturen la pantalla.
- * 
- * Esta función es para formularios (como Crear Usuario),
- * donde solo necesitamos una lista simple de roles para
- * mostrar en un <select>.
- * 
- * listarRoles() no sirve aquí porque trae datos con
- * paginación y estructura más compleja.
- */
 
-// LISTAR SOLO LOS ROLES (sin paginación, para el select)
+
+/* =====================================================================
+   fetchRoles()
+
+   Obtiene todos los roles sin paginación ni estructura compleja.
+
+   Explicación clara:
+   listarRoles() devuelve datos paginados (incluye página, total, etc.)
+   pero para un formulario de selección (un <select>) necesitamos
+   solamente la lista simple.
+
+   Por eso fetchRoles() hace una petición simple a:
+      GET /roles
+
+   y devuelve solo la lista sin paginar.
+   ===================================================================== */
 export async function fetchRoles() {
     const res = await fetch(`${API_URL}/roles`);
-    
+
     if (!res.ok) {
         throw new Error("Error al obtener lista de roles");
     }
 
-    return res.json(); 
+    return res.json();
 }

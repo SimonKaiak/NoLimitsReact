@@ -1,20 +1,51 @@
+// Ruta: src/pages/EditarPerfil.jsx
+/**
+ * Componente: EditarPerfil
+ * ---------------------------------------------
+ * Modal diseñado para actualizar los datos del usuario:
+ *  - Nombre
+ *  - Apellidos
+ *  - Correo (validación fuerte)
+ *  - Teléfono (solo números)
+ *  - Password (opcional, write-only)
+ *
+ * El componente:
+ *  - Carga los datos iniciales desde props.usuario
+ *  - Valida cada campo
+ *  - Envía los cambios al backend mediante actualizarMiPerfil()
+ *  - Notifica a PerfilUsuario para que recargue sus datos
+ *  - Cierra el modal al finalizar
+ *
+ * Props:
+ *  - usuario: objeto con los datos actuales del usuario
+ *  - onCerrar: función para cerrar el modal
+ *  - onActualizado: función para refrescar los datos en el padre
+ */
+
 import React, { useState } from "react";
-import InputText from ".././components/atoms/InputText";
+import InputText from "../components/atoms/InputText";
 import { ButtonAction } from "../components/atoms/ButtonAction";
-import { actualizarMiPerfil } from ".././services/usuarios";
+import { actualizarMiPerfil } from "../services/usuarios";
 
 export default function EditarPerfil({ usuario, onCerrar, onActualizado }) {
 
+    // ================================
+    //  ESTADO DEL FORMULARIO
+    // ================================
     const [form, setForm] = useState({
         nombre: usuario?.nombre || "",
         apellidos: usuario?.apellidos || "",
         correo: usuario?.correo || "",
         telefono: usuario?.telefono || "",
-        password: ""   // write-only
+        password: ""   // Write-only: nunca precargamos password
     });
 
+    // Estado de errores por campo
     const [errores, setErrores] = useState({});
 
+    // ================================
+    //  HANDLE CHANGE
+    // ================================
     const handleChange = (e) => {
         const { name, value } = e.target;
 
@@ -23,9 +54,13 @@ export default function EditarPerfil({ usuario, onCerrar, onActualizado }) {
             [name]: value
         }));
 
+        // Limpia error individual
         setErrores((prev) => ({ ...prev, [name]: "" }));
     };
 
+    // ================================
+    //  VALIDACIÓN DE CAMPOS
+    // ================================
     const validar = () => {
         const err = {};
         let ok = true;
@@ -51,7 +86,7 @@ export default function EditarPerfil({ usuario, onCerrar, onActualizado }) {
             ok = false;
         }
 
-        // Teléfono
+        // Teléfono (opcional pero validado)
         if (form.telefono && !/^\d+$/.test(form.telefono)) {
             err.telefono = "El teléfono debe contener solo números";
             ok = false;
@@ -61,24 +96,28 @@ export default function EditarPerfil({ usuario, onCerrar, onActualizado }) {
         return ok;
     };
 
+    // ================================
+    //  SUBMIT FORMULARIO
+    // ================================
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validar()) return;
 
-        // Solo mandamos password si el usuario la escribe
+        // Construimos payload limpio
         const payload = {
             nombre: form.nombre.trim(),
             apellidos: form.apellidos.trim(),
             correo: form.correo.trim(),
             telefono: form.telefono.trim(),
-            ...(form.password ? { password: form.password } : {}) // write-only
+            ...(form.password ? { password: form.password } : {}) // solo si fue escrita
         };
 
         try {
             await actualizarMiPerfil(usuario.id, payload);
+
             alert("Perfil actualizado correctamente");
 
-            onActualizado(); // recargar datos del usuario en PerfilUsuario
+            onActualizado(); // refrescar datos del usuario (perfil)
             onCerrar();      // cerrar modal
 
         } catch (err) {
@@ -95,6 +134,7 @@ export default function EditarPerfil({ usuario, onCerrar, onActualizado }) {
 
                 <form onSubmit={handleSubmit}>
 
+                    {/* Nombre */}
                     <InputText 
                         label="Nombre"
                         name="nombre"
@@ -103,6 +143,7 @@ export default function EditarPerfil({ usuario, onCerrar, onActualizado }) {
                         error={errores.nombre}
                     />
 
+                    {/* Apellidos */}
                     <InputText 
                         label="Apellidos"
                         name="apellidos"
@@ -111,6 +152,7 @@ export default function EditarPerfil({ usuario, onCerrar, onActualizado }) {
                         error={errores.apellidos}
                     />
 
+                    {/* Correo */}
                     <InputText 
                         label="Correo"
                         name="correo"
@@ -120,6 +162,7 @@ export default function EditarPerfil({ usuario, onCerrar, onActualizado }) {
                         error={errores.correo}
                     />
 
+                    {/* Teléfono */}
                     <InputText 
                         label="Teléfono"
                         name="telefono"
@@ -128,6 +171,7 @@ export default function EditarPerfil({ usuario, onCerrar, onActualizado }) {
                         error={errores.telefono}
                     />
 
+                    {/* Contraseña */}
                     <InputText 
                         label="Contraseña (opcional)"
                         name="password"
@@ -137,6 +181,7 @@ export default function EditarPerfil({ usuario, onCerrar, onActualizado }) {
                         error={errores.password}
                     />
 
+                    {/* Botones */}
                     <div className="modal-buttons">
                         <ButtonAction text="Guardar" type="submit" />
                         <ButtonAction text="Cancelar" onClick={onCerrar} />

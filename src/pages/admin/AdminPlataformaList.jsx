@@ -1,4 +1,5 @@
 // Ruta: src/pages/admin/AdminPlataformaList.jsx
+
 import React, { useEffect, useState } from "react";
 import { ButtonAction } from "../../components/atoms/ButtonAction.jsx";
 import CrearPlataforma from "../../components/organisms/CrearPlataforma";
@@ -8,31 +9,68 @@ import {
   obtenerPlataforma,
 } from "../../services/plataformas";
 
+/**
+ * AdminPlataformaList
+ *
+ * Página de administración para la entidad "Plataforma".
+ * Permite:
+ *  Listar plataformas
+ *  Buscar plataformas por nombre
+ *  Crear nuevas plataformas
+ *  Editar plataformas existentes
+ *  Eliminar plataformas
+ *
+ * Usa un modal para crear/editar y un filtro controlado que solo se aplica
+ * al presionar el botón de "Buscar".
+ */
 export default function AdminPlataformaList() {
+  // Lista completa de plataformas obtenidas desde el backend
   const [plataformas, setPlataformas] = useState([]);
 
-  // lo que escribe el usuario
+  // Texto que el usuario escribe en el input (no activa búsqueda)
   const [busquedaInput, setBusquedaInput] = useState("");
-  // filtro real aplicado
+
+  // Filtro real aplicado a la búsqueda (este sí llama al backend)
   const [filtroBusqueda, setFiltroBusqueda] = useState("");
 
+  // Paginación (placeholder, tu backend no pagina aún)
   const [pagina, setPagina] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
+
+  // Indicador de carga
   const [loading, setLoading] = useState(false);
+
+  // Control del modal (crear/editar)
   const [modalData, setModalData] = useState(null);
 
+  /**
+   * Se ejecuta cada vez que cambian:
+   *  - la página seleccionada
+   *  - el filtro real de búsqueda
+   *
+   * Esto permite recargar automáticamente el listado.
+   */
   useEffect(() => {
     cargarPlataformas(filtroBusqueda);
   }, [pagina, filtroBusqueda]);
 
-  // CARGAR LISTADO
+  /**
+   * Cargar la lista de plataformas desde el backend.
+   * Se aplican tanto la página como el filtro de búsqueda.
+   */
   async function cargarPlataformas(filtro = "") {
     setLoading(true);
 
     try {
       const data = await listarPlataformas(pagina, filtro);
+
+      // Si el backend envía data.contenido, usarlo.
+      // Si envía directamente un array, también funciona.
       setPlataformas(Array.isArray(data) ? data : data.contenido || []);
-      setTotalPaginas(1); // el back no pagina
+
+      // El backend todavía no pagina → dejamos fijo en 1
+      setTotalPaginas(1);
+
     } catch (err) {
       console.error(err);
       alert("❌ Error al cargar plataformas");
@@ -41,29 +79,42 @@ export default function AdminPlataformaList() {
     setLoading(false);
   }
 
+  /**
+   * Aplicar búsqueda únicamente cuando el usuario presiona "Buscar".
+   */
   const handleBuscarClick = () => {
     setPagina(1);
-    setFiltroBusqueda(busquedaInput); // aquí recién aplicas la búsqueda
+    setFiltroBusqueda(busquedaInput);
   };
 
-  // ELIMINAR
+  /**
+   * Eliminar una plataforma por ID.
+   */
   const handleEliminar = async (id) => {
     if (!window.confirm("¿Eliminar esta plataforma?")) return;
 
     try {
       await eliminarPlataforma(id);
+
+      // Actualización local sin recargar todo
       setPlataformas((prev) => prev.filter((p) => p.id !== id));
+
       alert("Plataforma eliminada!");
+
     } catch (err) {
       console.error(err);
       alert("❌ Error al eliminar");
     }
   };
 
-  // EDITAR (OBTENER POR ID)
+  /**
+   * Abrir modal para editar.
+   * Primero obtiene la plataforma desde el backend para asegurar datos frescos.
+   */
   const abrirModalEditar = async (fila) => {
     try {
       const plat = await obtenerPlataforma(fila.id);
+
       setModalData({
         modo: "editar",
         plataforma: plat,
@@ -74,6 +125,9 @@ export default function AdminPlataformaList() {
     }
   };
 
+  /**
+   * Render del componente principal.
+   */
   return (
     <div className="admin-wrapper">
       <h1 className="admin-title">Gestionar Plataformas</h1>
@@ -87,10 +141,11 @@ export default function AdminPlataformaList() {
           onChange={(e) => setBusquedaInput(e.target.value)}
           className="admin-input"
         />
+
         <ButtonAction text="Buscar" onClick={handleBuscarClick} />
       </div>
 
-      {/* Crear */}
+      {/* Crear nueva plataforma */}
       <div className="admin-form">
         <ButtonAction
           text="Crear Plataforma"
@@ -103,7 +158,7 @@ export default function AdminPlataformaList() {
         />
       </div>
 
-      {/* Modal */}
+      {/* Modal Crear/Editar */}
       {modalData && (
         <CrearPlataforma
           modo={modalData.modo}
@@ -115,7 +170,7 @@ export default function AdminPlataformaList() {
         />
       )}
 
-      {/* Tabla */}
+      {/* Tabla de resultados */}
       <table className="admin-table">
         <thead>
           <tr>
@@ -128,21 +183,18 @@ export default function AdminPlataformaList() {
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan="3" className="admin-msg">
-                Cargando...
-              </td>
+              <td colSpan="3" className="admin-msg">Cargando...</td>
             </tr>
           ) : plataformas.length === 0 ? (
             <tr>
-              <td colSpan="3" className="admin-msg">
-                No hay resultados
-              </td>
+              <td colSpan="3" className="admin-msg">No hay resultados</td>
             </tr>
           ) : (
             plataformas.map((p) => (
               <tr key={p.id}>
                 <td>{p.id}</td>
                 <td>{p.nombre}</td>
+
                 <td className="admin-actions">
                   <ButtonAction text="Editar" onClick={() => abrirModalEditar(p)} />
                   <ButtonAction text="Eliminar" onClick={() => handleEliminar(p.id)} />
@@ -153,7 +205,7 @@ export default function AdminPlataformaList() {
         </tbody>
       </table>
 
-      {/* Paginacion */}
+      {/* Paginación */}
       <div className="admin-pagination">
         <ButtonAction
           text="Anterior"

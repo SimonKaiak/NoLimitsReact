@@ -3,77 +3,89 @@ import { ForgotPasswordForm } from "../molecules/ForgotPasswordForm";
 import avatarImg from "../../assets/img/logos/candado.webp";
 
 /**
- * Este s el componente principal de la sección "Olvidé mi contraseña"
- * 
- * Este componente muestra una imagen (que es un candado) con una animación
- * y el formulario donde el usuario puede ingresar su correo electrónico
- * para recuperar su contraseña.
+ * Componente ForgotPasswordSection
+ *
+ * Representa la sección principal de la pantalla "Olvidé mi contraseña".
+ *
+ * Contiene dos partes:
+ *  1. Una imagen de un candado que realiza una animación al ser clickeada.
+ *  2. El formulario donde el usuario ingresa su correo para recuperar su contraseña.
  */
-
 export const ForgotPasswordSection = () => {
 
-    // Estado local que indica si la imagen está en proceso de voltearse
+    /**
+     * isFlipping:
+     * Estado que indica si la animación de giro del candado está activa.
+     * - false → la imagen está quieta
+     * - true  → la imagen está girando
+     */
     const [isFlipping, setIsFlipping] = useState(false);
 
     /**
-     * Función que se ejecuta al hacer click en la imagen del candado.
-     * 
-     * Si ya está girando (isFlippings = true), no hace nada.
-     * Si no está girando, activa la ainmación cambiando el estado a true.
+     * handleAvatarClick:
+     * Se ejecuta cuando el usuario hace click en el candado.
+     *
+     * Si isFlipping es true, significa que ya está girando,
+     * así que no permitimos otra animación para evitar errores visuales.
+     *
+     * Si isFlipping es false, activamos la animación.
      */
     const handleAvatarClick = () => {
-        if (isFlipping) return; // Evita activar la animación si ya está corriendo
-        setIsFlipping(true) // Inicia la animación del giro
+        if (isFlipping) return;
+        setIsFlipping(true);
     };
 
     /**
-     * Función que se ejecuta cuando termina la animación del candado.
-     * 
-     * Restaura el estado a false para permitir que el usuario pueda volver 
-     * a activar la animación con otro click
+     * handleAnimationEnd:
+     * Se ejecuta cuando la animación del candado termina.
+     *
+     * Al terminar el giro, isFlipping vuelve a false,
+     * permitiendo que el usuario pueda hacer click nuevamente
+     * para activar otra animación.
      */
-
     const handleAnimationEnd = () => {
         setIsFlipping(false);
     };
 
     /**
-     * Renderizado del componente
-     * 
-     * Muestra una sección que contiene
-     * - Un encabezado con la imagen del candado (que se puede animar al hacerle click)
-     * - El formulario de recuperación de contraseña.
+     * Render del componente:
+     * - Muestra un header con el candado animable.
+     * - Muestra el formulario para recuperar la contraseña.
      */
-
     return (
         <section className="section-forgot-password">
+
+            {/* Encabezado con la imagen animada */}
             <header>
                 <div
-                // Se agregan clases dinámicamente para aplicar la animación CSS si isFlipping = true
-                className={`image-container ${isFlipping ? 'backflip' : ''}`}
+                    data-testid="image-container"
 
-                // Evento que indica la animación al hacer click en la imagen
-                onClick={handleAvatarClick}
+                    /* Si isFlipping es true, agregamos la clase "backflip"
+                       para que se aplique la animación CSS */
+                    className={`image-container ${isFlipping ? 'backflip' : ''}`}
 
-                // Evento que detecta cuando termina la animación y resetea el estado
-                onAnimationEnd={handleAnimationEnd}
+                    /* Click que inicia la animación */
+                    onClick={handleAvatarClick}
+
+                    /* Evento que detecta cuando termina la animación */
+                    onAnimationEnd={handleAnimationEnd}
                 >
                     <div className="image">
-                        {/* Imagen del candado!*/}
+                        {/* Imagen del candado */}
                         <img 
-                        src={avatarImg}
-                        className="avatar"
-                        alt="candado contraseña"
+                            src={avatarImg}
+                            className="avatar"
+                            alt="candado contraseña"
                         />
                     </div>
                 </div>
             </header>
 
-            {/* Contenedor del formulario de recuperación*/}
-            <div className="formulario-container"> 
+            {/* Contenedor del formulario */}
+            <div className="formulario-container" data-testid="form-forgot-password">
                 <ForgotPasswordForm />
             </div>
-            
+
         </section>
     );
 };
