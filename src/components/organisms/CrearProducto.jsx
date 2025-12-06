@@ -1,13 +1,16 @@
 
+// Ruta: src/components/organisms/CrearProducto.jsx
 import React, { useEffect, useState } from "react";
 
 // Servicios del recurso Producto (crear / editar)
 import { crearProducto, editarProducto } from "../../services/productos";
 
-// Servicios de catálogos
-import { obtenerTiposProducto } from "../../services/tiposProducto";
-import { obtenerClasificaciones } from "../../services/clasificaciones";
-import { obtenerEstados } from "../../services/estados";
+// Servicios de catálogos (desde el mismo productos.js)
+import {
+  obtenerTiposProducto,
+  obtenerClasificaciones,
+  obtenerEstadosProducto as obtenerEstados,
+} from "../../services/productos";
 
 export default function CrearProducto({
   modo = "crear",
