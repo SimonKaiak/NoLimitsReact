@@ -2,10 +2,10 @@ import React, { useEffect, useState } from "react";
 import { ButtonAction } from "../../components/atoms/ButtonAction.jsx";
 import CrearDesarrollador from "../../components/organisms/CrearDesarrollador";
 import {
-  listarDesarrolladores,
-  eliminarDesarrollador,
-  obtenerDesarrollador,
-} from "../../services/desarrolladores";
+  listarTiposDesarrollador as listarDesarrolladores,
+  eliminarTipoDesarrollador as eliminarDesarrollador,
+  obtenerTipoDesarrollador as obtenerDesarrollador,
+} from "../../services/tiposDesarrollador";
 
 /**
  * AdminDesarrolladorList
