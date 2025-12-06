@@ -1,5 +1,3 @@
-// Ruta: src/pages/admin/AdminPlataformaList.jsx
-
 import React, { useEffect, useState } from "react";
 import { ButtonAction } from "../../components/atoms/ButtonAction.jsx";
 import CrearPlataforma from "../../components/organisms/CrearPlataforma";
@@ -33,7 +31,7 @@ export default function AdminPlataformaList() {
   // Filtro real aplicado a la búsqueda (este sí llama al backend)
   const [filtroBusqueda, setFiltroBusqueda] = useState("");
 
-  // Paginación (placeholder, tu backend no pagina aún)
+  // Paginación
   const [pagina, setPagina] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
 
@@ -52,6 +50,7 @@ export default function AdminPlataformaList() {
    */
   useEffect(() => {
     cargarPlataformas(filtroBusqueda);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagina, filtroBusqueda]);
 
   /**
@@ -64,13 +63,15 @@ export default function AdminPlataformaList() {
     try {
       const data = await listarPlataformas(pagina, filtro);
 
-      // Si el backend envía data.contenido, usarlo.
-      // Si envía directamente un array, también funciona.
-      setPlataformas(Array.isArray(data) ? data : data.contenido || []);
+      // Soporta ambos formatos:
+      // - PagedResponse: { contenido, totalPaginas, ... }
+      // - Array directo: [ { ... }, ... ]
+      const items = Array.isArray(data)
+        ? data
+        : data.contenido || data.content || [];
 
-      // El backend todavía no pagina → dejamos fijo en 1
-      setTotalPaginas(1);
-
+      setPlataformas(items);
+      setTotalPaginas(data.totalPaginas || data.totalPages || 1);
     } catch (err) {
       console.error(err);
       alert("❌ Error al cargar plataformas");
@@ -100,7 +101,6 @@ export default function AdminPlataformaList() {
       setPlataformas((prev) => prev.filter((p) => p.id !== id));
 
       alert("Plataforma eliminada!");
-
     } catch (err) {
       console.error(err);
       alert("❌ Error al eliminar");
@@ -183,11 +183,15 @@ export default function AdminPlataformaList() {
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan="3" className="admin-msg">Cargando...</td>
+              <td colSpan="3" className="admin-msg">
+                Cargando...
+              </td>
             </tr>
           ) : plataformas.length === 0 ? (
             <tr>
-              <td colSpan="3" className="admin-msg">No hay resultados</td>
+              <td colSpan="3" className="admin-msg">
+                No hay resultados
+              </td>
             </tr>
           ) : (
             plataformas.map((p) => (
