@@ -65,9 +65,8 @@ export default function AdminGeneroList() {
     try {
       const data = await listarGeneros(pagina, filtro);
 
-      // Si es array lo usamos directo; si no, tomamos el contenido
-      setGeneros(Array.isArray(data) ? data : data.contenido || []);
-      setTotalPaginas(1);
+      setGeneros(data.contenido || []);
+      setTotalPaginas(data.totalPaginas || 1);
 
     } catch (err) {
       console.error(err);

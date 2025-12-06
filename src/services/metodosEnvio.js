@@ -32,7 +32,15 @@ const API_BASE =
 // 3. Devolvemos { contenido, totalPaginas: 1 }
 // ======================================================================
 export async function listarMetodosEnvio(page = 1, search = "") {
-  const endpoint = `${API_BASE}/api/v1/metodos-envio`;
+
+  // Endpoint paginado real
+  let endpoint = `${API_BASE}/api/v1/metodos-envio/paginado?page=${page}&size=5`;
+
+  // Si hay búsqueda, se la agregamos al backend
+  if (search.trim().length > 0) {
+    endpoint += `&search=${encodeURIComponent(search.trim())}`;
+  }
+
   console.log("[listarMetodosEnvio] endpoint:", endpoint);
 
   const res = await fetch(endpoint);
@@ -43,26 +51,15 @@ export async function listarMetodosEnvio(page = 1, search = "") {
     throw new Error("Error cargando métodos de envío");
   }
 
+  // El backend devuelve el paginado real
   const data = await res.json();
   console.log("[listarMetodosEnvio] raw data:", data);
 
-  // Normalizamos: el backend devuelve un array directamente
-  let lista = Array.isArray(data) ? data : [];
-
-  // Filtro por nombre en el FRONT
-  const filtro = search.trim().toLowerCase();
-  if (filtro) {
-    lista = lista.filter((m) =>
-      (m.nombre || "").toLowerCase().includes(filtro)
-    );
-  }
-
   return {
-    contenido: lista,
-    totalPaginas: 1
+    contenido: data.contenido || [],
+    totalPaginas: data.totalPaginas || 1
   };
 }
-
 
 // ======================================================================
 // CREAR MÉTODO DE ENVÍO (POST)

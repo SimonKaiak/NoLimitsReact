@@ -32,16 +32,15 @@ const API_URL = `${API_BASE}/estados`;
 // ====================================================================
 export async function listarEstados(page = 1, search = "") {
 
-  let url = API_URL;
+  const params = new URLSearchParams({
+    page,
+    size: 5,
+    search
+  });
 
-  // Si hay un texto de búsqueda, usamos el endpoint de filtro por nombre
-  if (search && search.trim()) {
-    url = `${API_URL}/nombre/${encodeURIComponent(search)}`;
-  }
+  const res = await fetch(`${API_URL}/paginado?${params.toString()}`);
 
-  const res = await fetch(url);
-
-  if (!res.ok) throw new Error("Error cargando estados");
+  if (!res.ok) throw new Error("Error cargando estados paginados");
 
   return res.json();
 }

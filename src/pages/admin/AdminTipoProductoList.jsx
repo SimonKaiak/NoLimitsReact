@@ -66,13 +66,13 @@ export default function AdminTipoProductoList() {
     try {
       const data = await listarTiposProducto(pagina, busqueda);
 
-      setTipos(Array.isArray(data) ? data : data.contenido || []);
-      setTotalPaginas(1); // (temporal mientras el backend no pagine)
+      setTipos(data.contenido || []);
+      setTotalPaginas(data.totalPaginas || 1);
     } catch (err) {
       console.error(err);
       alert("❌ Error al cargar tipos de producto");
     }
-    setLoading(false);
+    setLoading(false)
   }
 
   /**

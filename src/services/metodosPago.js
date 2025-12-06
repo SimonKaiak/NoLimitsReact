@@ -35,44 +35,34 @@ const API_BASE =
 //   así que normalizamos el resultado.
 // ======================================================================
 export async function listarMetodosPago(page = 1, search = "") {
-  const trimmed = search.trim(); // Quitamos espacios extra
 
-  // Seleccionamos endpoint según si hay búsqueda o no
-  const endpoint =
-    trimmed.length > 0
-      ? `${API_BASE}/api/v1/metodos-pago/buscar/${encodeURIComponent(trimmed)}`
-      : `${API_BASE}/api/v1/metodos-pago`;
+  const trimmed = search.trim();
+
+  // Endpoint base con paginación
+  let endpoint = `${API_BASE}/api/v1/metodos-pago/paginado?page=${page}&size=5`;
+
+  // Si hay búsqueda, se agrega ?search=
+  if (trimmed.length > 0) {
+    endpoint += `&search=${encodeURIComponent(trimmed)}`;
+  }
 
   console.log("[listarMetodosPago] endpoint:", endpoint);
 
-  // Llamada al backend
   const res = await fetch(endpoint);
 
   if (!res.ok) {
-    const txt = await res.text();
+    const txt = await res.text().catch(() => "");
     console.error("[listarMetodosPago] Error HTTP:", res.status, txt);
     throw new Error("Error cargando métodos de pago");
   }
 
-  // Convertimos respuesta a JSON
   const data = await res.json();
-  console.log("[listarMetodosPago] raw data:", data);
+  console.log("[listarMetodosPago] raw paginated:", data);
 
-  // Normalización del resultado:
-  // - Si es array, se usa tal cual
-  // - Si es objeto (resultado de búsqueda), envolvemos en un array
-  let contenido = [];
-
-  if (Array.isArray(data)) {
-    contenido = data;
-  } else if (data) {
-    contenido = [data];
-  }
-
-  // devolvemos totalPaginas=1
+  // Aseguramos que venga contenido y totalPaginas
   return {
-    contenido,
-    totalPaginas: 1,
+    contenido: data.contenido || [],
+    totalPaginas: data.totalPaginas || 1,
   };
 }
 

@@ -32,30 +32,28 @@ const API_URL = `${API_BASE}/api/v1/clasificaciones`;
    Luego, opcionalmente aplica un filtro por nombre en el frontend.
 */
 export async function listarClasificaciones(page = 1, search = "") {
-  // Se hace la petición GET.
-  const res = await fetch(API_URL);
 
-  // Si la respuesta no es correcta, se captura el error.
+  // Armar la URL correcta según parámetros
+  const url = `${API_URL}/paginado?page=${page}&size=5&search=${encodeURIComponent(
+    search.trim()
+  )}`;
+
+  const res = await fetch(url);
+
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     console.error("Error cargando clasificaciones:", res.status, txt);
     throw new Error("Error cargando clasificaciones");
   }
 
-  // Convertimos la respuesta a JSON.
-  const data = await res.json();
-
-  // Si no hay búsqueda, devolvemos todo.
-  if (!search || !search.trim()) {
-    return data;
-  }
-
-  // Si hay búsqueda, filtramos en el frontend.
-  const needle = search.trim().toLowerCase();
-
-  return data.filter((item) =>
-    (item.nombre || "").toLowerCase().includes(needle)
-  );
+  // Ahora el backend SIEMPRE devuelve:
+  // {
+  //   contenido: [...],
+  //   pagina: 1,
+  //   totalPaginas: 3,
+  //   totalElementos: 14
+  // }
+  return await res.json();
 }
 
 /* ============================================================

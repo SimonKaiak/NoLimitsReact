@@ -68,5 +68,3 @@ dist-ssr
 
 coverage/   
 # Resultados de pruebas de cobertura
-src/test/   
-# Tests locales que no deseas versionar

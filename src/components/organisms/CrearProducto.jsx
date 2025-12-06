@@ -1,63 +1,67 @@
-// Importa React y dos hooks: useState para manejar el formulario
-// y useEffect para cargar datos cuando se edita un producto.
+
 import React, { useEffect, useState } from "react";
 
-// Funciones del backend para crear y editar productos
+// Servicios del recurso Producto (crear / editar)
 import { crearProducto, editarProducto } from "../../services/productos";
 
-/**
- * Componente CrearProducto
- *
- * Se usa para crear o editar productos.
- * Internamente es el mismo formulario, pero cambia su comportamiento
- * dependiendo de la prop "modo" y si recibe un "productoInicial".
- *
- * Props:
- *  - modo: "crear" o "editar"
- *  - productoInicial: objeto producto cuando se está editando
- *  - onFinish: función que se ejecuta cuando termina de crear/editar
- */
+// Servicios de catálogos
+import { obtenerTiposProducto } from "../../services/tiposProducto";
+import { obtenerClasificaciones } from "../../services/clasificaciones";
+import { obtenerEstados } from "../../services/estados";
+
 export default function CrearProducto({
   modo = "crear",
   productoInicial = null,
   onFinish,
 }) {
-  /**
-   * formData representa todos los datos del formulario.
-   * Tiene:
-   *  - nombre: texto
-   *  - precio: número
-   *  - tipoProductoId: id obligatorio
-   *  - clasificacionId: id opcional
-   *  - estadoId: id obligatorio
-   */
   const [formData, setFormData] = useState({
     nombre: "",
     precio: "",
     tipoProductoId: "",
     clasificacionId: "",
     estadoId: "",
+    saga: "",
+    portadaSaga: "",
   });
 
-  // Estado para mostrar errores de validación o del backend
   const [error, setError] = useState("");
 
-  /**
-   * useEffect
-   *
-   * Si productoInicial existe, significa que estamos editando.
-   * Entonces se cargan los valores del producto para rellenar el formulario.
-   *
-   * Si no, se limpian los campos para crear uno nuevo.
-   */
+  // Catálogos
+  const [tipos, setTipos] = useState([]);
+  const [clasificaciones, setClasificaciones] = useState([]);
+  const [estados, setEstados] = useState([]);
+
+  // Cargar catálogos al iniciar
+  useEffect(() => {
+    async function cargar() {
+      try {
+        const [tiposData, clasifData, estadosData] = await Promise.all([
+          obtenerTiposProducto(),
+          obtenerClasificaciones(),
+          obtenerEstados(),
+        ]);
+
+        setTipos(tiposData);
+        setClasificaciones(clasifData);
+        setEstados(estadosData);
+      } catch (e) {
+        console.error("Error cargando catálogos:", e);
+      }
+    }
+    cargar();
+  }, []);
+
+  // Cargar datos si se edita
   useEffect(() => {
     if (productoInicial) {
       setFormData({
         nombre: productoInicial.nombre ?? "",
         precio: productoInicial.precio ?? "",
-        tipoProductoId: productoInicial.tipoProducto?.id ?? "",
-        clasificacionId: productoInicial.clasificacion?.id ?? "",
-        estadoId: productoInicial.estado?.id ?? "",
+        tipoProductoId: productoInicial.tipoProductoId ?? "",
+        clasificacionId: productoInicial.clasificacionId ?? "",
+        estadoId: productoInicial.estadoId ?? "",
+        saga: productoInicial.saga ?? "",
+        portadaSaga: productoInicial.portadaSaga ?? "",
       });
     } else {
       setFormData({
@@ -66,42 +70,30 @@ export default function CrearProducto({
         tipoProductoId: "",
         clasificacionId: "",
         estadoId: "",
+        saga: "",
+        portadaSaga: "",
       });
     }
-  }, [productoInicial, modo]);
+  }, [productoInicial]);
 
-  /**
-   * handleChange
-   *
-   * Esta función se ejecuta cada vez que el usuario escribe un valor nuevo.
-   * Actualiza el campo que corresponde dentro de formData.
-   */
   function handleChange(e) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   }
 
-  /**
-   * handleSubmit
-   *
-   * Se ejecuta cuando el formulario se envía.
-   * 1. Evita que la página recargue.
-   * 2. Limpia errores previos.
-   * 3. Construye el payload en el formato que espera el backend.
-   * 4. Llama a crearProducto o editarProducto según el modo.
-   * 5. Ejecuta onFinish si se envió correctamente.
-   */
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
 
     const payload = {
       nombre: formData.nombre,
-      precio: parseFloat(formData.precio),
-      tipoProducto: { id: Number(formData.tipoProductoId) },
-      clasificacion: formData.clasificacionId
-        ? { id: Number(formData.clasificacionId) }
-        : null, // opcional
-      estado: { id: Number(formData.estadoId) },
+      precio: Number(formData.precio),
+      tipoProductoId: Number(formData.tipoProductoId),
+      clasificacionId: formData.clasificacionId
+        ? Number(formData.clasificacionId)
+        : null,
+      estadoId: Number(formData.estadoId),
+      saga: formData.saga || null,
+      portadaSaga: formData.portadaSaga || null,
     };
 
     try {
@@ -118,19 +110,13 @@ export default function CrearProducto({
     }
   }
 
-  /**
-   * Render del formulario
-   *
-   * Todos los inputs son básicos aquí, sin componentes reutilizables.
-   * Si hay un error, se muestra arriba del formulario.
-   */
   return (
     <form onSubmit={handleSubmit}>
       <h3>{modo === "editar" ? "Editar producto" : "Crear producto"}</h3>
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {/* Campo nombre */}
+      {/* Nombre */}
       <input
         type="text"
         name="nombre"
@@ -140,7 +126,7 @@ export default function CrearProducto({
         required
       />
 
-      {/* Campo precio */}
+      {/* Precio */}
       <input
         type="number"
         name="precio"
@@ -150,36 +136,68 @@ export default function CrearProducto({
         required
       />
 
-      {/* ID tipoProducto (obligatorio) */}
-      <input
-        type="number"
+      {/* Tipo de producto */}
+      <select
         name="tipoProductoId"
-        placeholder="ID tipoProducto (obligatorio)"
         value={formData.tipoProductoId}
         onChange={handleChange}
         required
-      />
+      >
+        <option value="">Seleccione tipo de producto</option>
+        {tipos.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.nombre}
+          </option>
+        ))}
+      </select>
 
-      {/* ID clasificación (opcional) */}
-      <input
-        type="number"
+      {/* Clasificación */}
+      <select
         name="clasificacionId"
-        placeholder="ID clasificación (opcional)"
         value={formData.clasificacionId}
         onChange={handleChange}
-      />
+      >
+        <option value="">Sin clasificación</option>
+        {clasificaciones.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.nombre}
+          </option>
+        ))}
+      </select>
 
-      {/* ID estado (obligatorio) */}
-      <input
-        type="number"
+      {/* Estado */}
+      <select
         name="estadoId"
-        placeholder="ID estado (obligatorio)"
         value={formData.estadoId}
         onChange={handleChange}
         required
+      >
+        <option value="">Seleccione estado</option>
+        {estados.map((e) => (
+          <option key={e.id} value={e.id}>
+            {e.nombre}
+          </option>
+        ))}
+      </select>
+
+      {/* Saga */}
+      <input
+        type="text"
+        name="saga"
+        placeholder="Saga (opcional)"
+        value={formData.saga}
+        onChange={handleChange}
       />
 
-      {/* Botón de envío */}
+      {/* Portada Saga */}
+      <input
+        type="text"
+        name="portadaSaga"
+        placeholder="URL portada saga (opcional)"
+        value={formData.portadaSaga}
+        onChange={handleChange}
+      />
+
       <button type="submit">
         {modo === "editar" ? "Guardar cambios" : "Guardar"}
       </button>

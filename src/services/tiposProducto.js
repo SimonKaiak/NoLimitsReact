@@ -22,8 +22,6 @@ const API_BASE =
 // ----------------------------------------------------------------------
 const API_URL = `${API_BASE}/api/v1/tipo-productos`;
 
-
-
 /* ======================================================================
    LISTAR TIPOS DE PRODUCTO
    GET  /api/v1/tipo-productos
@@ -31,7 +29,7 @@ const API_URL = `${API_BASE}/api/v1/tipo-productos`;
 
    Parámetros:
      - page (actualmente ignorado, backend no pagina)
-     - search → texto para buscar por nombre
+     - search -> texto para buscar por nombre
 
    Lógica:
       Si viene texto, usamos endpoint /buscar.
@@ -41,10 +39,9 @@ const API_URL = `${API_BASE}/api/v1/tipo-productos`;
    ====================================================================== */
 export async function listarTiposProducto(page = 1, search = "") {
 
-  // Si hay texto de búsqueda → usamos el endpoint especial /buscar
-  const url = search && search.trim()
-    ? `${API_URL}/buscar?nombre=${encodeURIComponent(search.trim())}`
-    : API_URL;
+  const url = `${API_URL}/paginado?page=${page}&size=5&search=${encodeURIComponent(
+    search
+  )}`;
 
   const res = await fetch(url);
 
@@ -54,10 +51,8 @@ export async function listarTiposProducto(page = 1, search = "") {
     throw new Error("Error cargando tipos de productos");
   }
 
-  return await res.json();
+  return await res.json(); // devuelve: { contenido, pagina, totalPaginas, totalElementos }
 }
-
-
 
 /* ======================================================================
    CREAR TIPO DE PRODUCTO
@@ -84,8 +79,6 @@ export async function crearTipoProducto(payload) {
   return res.json();
 }
 
-
-
 /* ======================================================================
    EDITAR (PUT)
    PUT  /api/v1/tipo-productos/{id}
@@ -108,8 +101,6 @@ export async function editarTipoProducto(id, payload) {
 
   return res.json();
 }
-
-
 
 /* ======================================================================
    PATCH (ACTUALIZACIÓN PARCIAL)
@@ -134,8 +125,6 @@ export async function patchTipoProducto(id, payloadParcial) {
   return res.json();
 }
 
-
-
 /* ======================================================================
    ELIMINAR
    DELETE  /api/v1/tipo-productos/{id}
@@ -156,8 +145,6 @@ export async function eliminarTipoProducto(id) {
 
   return true;
 }
-
-
 
 /* ======================================================================
    OBTENER POR ID

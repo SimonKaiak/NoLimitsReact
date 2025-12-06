@@ -32,20 +32,18 @@ const API_URL = `${API_BASE}/generos`;
 // ====================================================================
 export async function listarGeneros(page = 1, search = "") {
 
-  let url = API_URL;
+  const params = new URLSearchParams();
+  params.append("page", page);
+  params.append("size", 5);
+  params.append("search", search.trim());
 
-  // Si el usuario escribió algo en el buscador
-  if (search && search.trim()) {
-    url = `${API_URL}/nombre/${encodeURIComponent(search)}`;
-  }
-
-  const res = await fetch(url);
+  const res = await fetch(`${API_URL}/paginado?${params.toString()}`);
 
   if (!res.ok) {
     throw new Error("Error cargando géneros");
   }
 
-  return res.json();
+  return res.json(); // devuelve { contenido, totalPaginas, totalElementos }
 }
 
 

@@ -60,11 +60,9 @@ export default function AdminEmpresaList() {
     try {
       const data = await listarEmpresas(pagina, filtro);
 
-      // Backend puede devolver lista directa o {contenido: [...]}
-      setEmpresas(Array.isArray(data) ? data : data.contenido || []);
+      setEmpresas(data.contenido || []);
+      setTotalPaginas(data.totalPaginas || 1);
 
-      // Por ahora no hay paginación real
-      setTotalPaginas(1);
     } catch (err) {
       console.error(err);
       alert("Error al cargar empresas");

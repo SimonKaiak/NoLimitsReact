@@ -43,26 +43,27 @@ const API_URL = `${API_BASE}/api/tipos-desarrollador`;
    3. Si hay búsqueda, filtra por nombre desde el frontend.
    ====================================================================== */
 export async function listarTiposDesarrollador(pagina, busqueda = "") {
-  const res = await fetch(API_URL);
+  
+  const endpoint = `${API_BASE}/api/tipos-desarrollador/paginado?page=${pagina}&size=5`;
+
+  const res = await fetch(endpoint);
 
   if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    console.error("Error listar tipos desarrollador:", res.status, txt);
+    console.error("Error listar tipos desarrollador:", res.status);
     throw new Error("Error al listar tipos de desarrollador");
   }
 
   const data = await res.json();
 
-  // Si no se buscó nada, devolvemos todo.
-  if (!busqueda || !busqueda.trim()) {
-    return data;
+  // Filtrar en frontend si hay búsqueda
+  if (busqueda.trim().length > 0) {
+    const needle = busqueda.toLowerCase();
+    data.contenido = data.contenido.filter((t) =>
+      (t.nombre || "").toLowerCase().includes(needle)
+    );
   }
 
-  // Filtro por nombre en memoria
-  const needle = busqueda.trim().toLowerCase();
-  return data.filter((item) =>
-    (item.nombre || "").toLowerCase().includes(needle)
-  );
+  return data; 
 }
 
 

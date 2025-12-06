@@ -29,7 +29,9 @@ const API_URL = `${API_BASE}/empresas`;
 // ====================================================================
 export async function listarEmpresas(page = 1, search = "") {
 
-  const res = await fetch(API_URL);
+  let url = `${API_URL}?page=${page}&size=10`;
+
+  const res = await fetch(url);
 
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
@@ -39,18 +41,22 @@ export async function listarEmpresas(page = 1, search = "") {
 
   const data = await res.json();
 
-  // Si no hay búsqueda, devolvemos la lista tal cual
+  // Si no hay búsqueda - devolvemos tal cual
   if (!search || !search.trim()) {
     return data;
   }
 
   const needle = search.trim().toLowerCase();
-  const lista = Array.isArray(data) ? data : data.contenido || [];
-
-  // Filtramos en el front por coincidencia en nombre
-  return lista.filter((item) =>
+  const filtrado = data.contenido.filter((item) =>
     (item.nombre || "").toLowerCase().includes(needle)
   );
+
+  return {
+    contenido: filtrado,
+    pagina: data.pagina,
+    totalPaginas: data.totalPaginas,
+    totalElementos: data.totalElementos
+  };
 }
 
 

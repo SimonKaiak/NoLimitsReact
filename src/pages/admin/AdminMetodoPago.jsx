@@ -84,9 +84,7 @@ export default function AdminMetodoPagoList() {
         try {
             await eliminarMetodoPago(id);
 
-            // eliminamos localmente sin recargar toda la lista
-            setMetodos((prev) => prev.filter((m) => m.id !== id));
-
+            await cargarMetodos();
             alert("Método eliminado!");
 
         } catch (err) {

@@ -62,14 +62,18 @@ export default function AdminTipoDesarrolladorList() {
    */
   async function cargarTipos() {
     setLoading(true);
+
     try {
       const data = await listarTiposDesarrollador(pagina, filtro);
-      setTipos(Array.isArray(data) ? data : data.contenido || []);
-      setTotalPaginas(1); // por ahora fijo, ya que el backend no pagina
+
+      setTipos(data.contenido || []);
+      setTotalPaginas(data.totalPaginas || 1);
+
     } catch (err) {
       console.error(err);
       alert("❌ Error al cargar tipos de desarrollador");
     }
+
     setLoading(false);
   }
 

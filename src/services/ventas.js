@@ -144,3 +144,27 @@ export async function obtenerMisCompras() {
   console.log("MisCompras data normalizada:", compras);
   return compras;
 }
+
+export async function obtenerMisComprasPaginado(page = 1, size = 5) {
+  const res = await fetch(
+    `${API_BASE}/v1/ventas/mis-compras/paginado?page=${page}&size=${size}`,
+    {
+      method: "GET",
+      credentials: "include",
+    }
+  );
+
+  const text = await res.text();
+
+  if (!res.ok) {
+    console.error("[mis-compras/paginado] ERROR:", res.status, text);
+    throw new Error("Error al cargar compras paginadas");
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    console.error("Respuesta NO JSON:", text);
+    throw new Error("Respuesta inválida del servidor");
+  }
+}

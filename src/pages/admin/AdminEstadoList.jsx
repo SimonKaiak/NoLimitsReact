@@ -58,11 +58,8 @@ export default function AdminEstadoList() {
     try {
       const data = await listarEstados(pagina, filtro);
 
-      // Soporte para dos formas de respuesta
-      setEstados(Array.isArray(data) ? data : data.contenido || []);
-
-      // El backend no está paginando, así que se mantiene 1.
-      setTotalPaginas(1);
+      setEstados(data.contenido || []);
+      setTotalPaginas(data.totalPaginas || 1);
 
     } catch (err) {
       alert("Error al cargar estados");
@@ -200,6 +197,26 @@ export default function AdminEstadoList() {
           )}
         </tbody>
       </table>
+
+      {/* Paginación */}
+      <div className="admin-pagination">
+        <ButtonAction
+          text="Anterior"
+          disabled={pagina <= 1}
+          onClick={() => setPagina((p) => p - 1)}
+        />
+
+        <span className="admin-page-info">
+          Página {pagina} / {totalPaginas}
+        </span>
+
+        <ButtonAction
+          text="Siguiente"
+          disabled={pagina >= totalPaginas}
+          onClick={() => setPagina((p) => p + 1)}
+        />
+
+      </div>
     </div>
   );
 }

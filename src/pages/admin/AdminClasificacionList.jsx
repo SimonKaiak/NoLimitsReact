@@ -62,10 +62,10 @@ export default function AdminClasificacionList() {
        * Dependiendo del formato del backend,
        * puede llegar un arreglo directo o puede venir un objeto.
        */
-      setClasificaciones(Array.isArray(data) ? data : data.contenido || []);
+      setClasificaciones(data.contenido || []);
+      setTotalPaginas(data.totalPaginas || 1);
 
-      // El backend no está paginando, por eso siempre dejamos 1
-      setTotalPaginas(1);
+
     } catch (err) {
       console.error(err);
       alert("Error al cargar clasificaciones");

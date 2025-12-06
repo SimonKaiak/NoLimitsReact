@@ -38,7 +38,13 @@ const API_URL = `${API_BASE}/api/v1/tipos-empresa`;
      3. Si hay búsqueda, filtra en memoria por coincidencia en el nombre.
    ====================================================================== */
 export async function listarTiposEmpresa(pagina, busqueda = "") {
-  const res = await fetch(API_URL);
+
+  const size = 5; // tamaño de página estándar del proyecto
+
+  // URL con parámetros de paginación
+  let url = `${API_URL}?page=${pagina}&size=${size}`;
+
+  const res = await fetch(url);
 
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
@@ -46,18 +52,23 @@ export async function listarTiposEmpresa(pagina, busqueda = "") {
     throw new Error("Error al listar tipos de empresa");
   }
 
-  const data = await res.json();
+  const data = await res.json(); // <- viene un PagedResponse
 
-  // Si no buscamos nada, devolvemos todo.
+  // Si no hay búsqueda, devolvemos la respuesta tal como viene del backend
   if (!busqueda || !busqueda.trim()) {
     return data;
   }
 
-  // Filtro en memoria por nombre
+  // FILTRAR EN EL FRONT (solo sobre la página actual)
   const needle = busqueda.trim().toLowerCase();
-  return data.filter((item) =>
+  const filtrado = data.contenido.filter((item) =>
     (item.nombre || "").toLowerCase().includes(needle)
   );
+
+  return {
+    ...data,
+    contenido: filtrado
+  };
 }
 
 

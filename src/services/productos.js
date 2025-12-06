@@ -1,52 +1,37 @@
+// Ruta: src/services/productos.js
+
 // ======================================================================
 // Servicio: productos.js
-// Encargado de manejar todas las operaciones de productos.
-// Incluye:
-//
-// - LISTAR productos
-// - CREAR producto
-// - OBTENER producto por ID
-// - EDITAR producto completo (PUT)
-// - ELIMINAR producto
-//
-// Este servicio llama a un backend REST y trabaja siempre con JSON.
+// Encargado de manejar todas las operaciones de productos y
+// algunos catálogos relacionados (tipos, clasificaciones, estados).
 // ======================================================================
 
-
-// ----------------------------------------------------------------------
-// API_BASE 
-// ----------------------------------------------------------------------
-const API_BASE =
+// Base del backend (sin /api al final)
+const API_ROOT =
   import.meta.env.VITE_API_URL ||
-  "https://nolimits-backend-final.onrender.com/api";
+  "https://nolimits-backend-final.onrender.com";
 
+// Prefijo de la API v1
+const API_V1 = `${API_ROOT}/api/v1`;
+
+// Endpoints principales
+const PRODUCTOS_URL = `${API_V1}/productos`;
+const TIPOS_URL = `${API_V1}/tipo-productos`;
+const CLASIF_URL = `${API_V1}/clasificaciones`;
+const ESTADOS_URL = `${API_V1}/estados`;
 
 // ======================================================================
 // LISTAR TODOS LOS PRODUCTOS
-// GET /v1/productos
-//
-// La respuesta del backend a veces es:
-//
-// - un array directamente       → [ {...}, {...} ]
-// - un objeto con "contenido"   → { contenido: [ ... ] }
-// - un objeto con "content"     → { content: [ ... ] }
-//
+// GET /api/v1/productos
 // ======================================================================
 export async function listarProductos() {
-
-  // Llamamos al endpoint
-  const res = await fetch(`${API_BASE}/v1/productos`);
-
-  // Leemos el cuerpo como texto porque a veces el back responde raro.
+  const res = await fetch(PRODUCTOS_URL);
   const text = await res.text();
 
-  // Si la respuesta NO es OK, lanzamos un error con más detalle.
   if (!res.ok) {
     throw new Error("Status " + res.status + " → " + text);
   }
 
-  // Intentamos convertir a JSON.
-  // Si falla, devolvemos una lista vacía.
   let data;
   try {
     data = JSON.parse(text);
@@ -54,7 +39,7 @@ export async function listarProductos() {
     return [];
   }
 
-  // Normalizamos para cubrir distintos formatos de respuesta.
+  // Por si en algún momento cambias a paginado con "content"/"contenido"
   if (Array.isArray(data)) return data;
   if (Array.isArray(data.contenido)) return data.contenido;
   if (Array.isArray(data.content)) return data.content;
@@ -62,53 +47,36 @@ export async function listarProductos() {
   return [];
 }
 
-
 // ======================================================================
 // CREAR PRODUCTO
-// POST /v1/productos
-//
-// "data" es un objeto con los datos del producto.
-// Ejemplo:
-// {
-//   nombre: "Spider-Man Remastered",
-//   precio: 59990,
-//   tipoProducto: { id: 1 },
-//   estado: { id: 1 }
-// }
+// POST /api/v1/productos
 // ======================================================================
 export async function crearProducto(data) {
-
-  const res = await fetch(`${API_BASE}/v1/productos`, {
+  const res = await fetch(PRODUCTOS_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data), // Convertimos el objeto a JSON
+    body: JSON.stringify(data),
   });
 
   const text = await res.text();
 
-  // Si el backend responde con error, lanzamos excepción
   if (!res.ok) {
     throw new Error(text || "Error al crear producto");
   }
 
-  // Intentamos devolver el JSON
   try {
     return JSON.parse(text);
   } catch {
-    return null; // Si no es JSON válido
+    return null;
   }
 }
 
-
 // ======================================================================
 // OBTENER PRODUCTO POR ID
-// GET /v1/productos/{id}
-//
-// Retorna un producto específico.
+// GET /api/v1/productos/{id}
 // ======================================================================
 export async function obtenerProducto(id) {
-
-  const res = await fetch(`${API_BASE}/v1/productos/${id}`);
+  const res = await fetch(`${PRODUCTOS_URL}/${id}`);
   const text = await res.text();
 
   if (!res.ok) {
@@ -118,16 +86,12 @@ export async function obtenerProducto(id) {
   return JSON.parse(text);
 }
 
-
 // ======================================================================
-// EDITAR PRODUCTO (PUT)
-// PUT /v1/productos/{id}
-//
-// Reemplaza COMPLETAMENTE el producto en el backend.
+// EDITAR PRODUCTO (PUT COMPLETO)
+// PUT /api/v1/productos/{id}
 // ======================================================================
 export async function editarProducto(id, data) {
-
-  const res = await fetch(`${API_BASE}/v1/productos/${id}`, {
+  const res = await fetch(`${PRODUCTOS_URL}/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -146,20 +110,175 @@ export async function editarProducto(id, data) {
   }
 }
 
-
 // ======================================================================
 // ELIMINAR PRODUCTO
-// DELETE /v1/productos/{id}
-//
-// Si el backend responde bien, no es necesario devolver nada.
+// DELETE /api/v1/productos/{id}
 // ======================================================================
 export async function eliminarProducto(id) {
-
-  const res = await fetch(`${API_BASE}/v1/productos/${id}`, {
+  const res = await fetch(`${PRODUCTOS_URL}/${id}`, {
     method: "DELETE",
   });
 
   if (!res.ok) {
-    throw new Error("Error al eliminar producto");
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Error al eliminar producto");
   }
+}
+
+// ======================================================================
+// CATÁLOGOS PARA SELECTS DEL FORMULARIO
+// ======================================================================
+
+// TIPOS DE PRODUCTO
+// GET /api/v1/tipo-productos
+export async function obtenerTiposProducto() {
+  const res = await fetch(TIPOS_URL);
+  const text = await res.text();
+
+  if (!res.ok) {
+    throw new Error("Status " + res.status + " → " + text);
+  }
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return [];
+  }
+
+  return Array.isArray(data) ? data : [];
+}
+
+// CLASIFICACIONES
+// GET /api/v1/clasificaciones
+export async function obtenerClasificaciones() {
+  const res = await fetch(CLASIF_URL);
+  const text = await res.text();
+
+  if (!res.ok) {
+    throw new Error("Status " + res.status + " → " + text);
+  }
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return [];
+  }
+
+  return Array.isArray(data) ? data : [];
+}
+
+// ESTADOS
+// GET /api/v1/estados
+export async function obtenerEstadosProducto() {
+  const res = await fetch(ESTADOS_URL);
+  const text = await res.text();
+
+  if (!res.ok) {
+    throw new Error("Status " + res.status + " → " + text);
+  }
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return [];
+  }
+
+  return Array.isArray(data) ? data : [];
+}
+
+// ======================================================================
+// (Opcional) FUNCIONES PARA SAGAS (para el carrusel)
+// GET /api/v1/productos/sagas
+// GET /api/v1/productos/sagas/{saga}
+// ======================================================================
+export async function obtenerSagas() {
+  const resp = await fetch(`${PRODUCTOS_URL}/sagas`);
+
+  // Si la respuesta no es OK → error
+  if (!resp.ok) {
+    console.error("Error HTTP:", resp.status);
+    return [];
+  }
+
+  // Leemos texto primero
+  const text = await resp.text();
+
+  // Si viene vacío, devolvemos []
+  if (!text || text.trim().length === 0) {
+    console.warn("Endpoint /sagas devolvió vacío");
+    return [];
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("JSON inválido al obtener sagas:", err, text);
+    return [];
+  }
+}
+
+// ======================================================================
+// OBTENER PRODUCTOS POR SAGA
+// GET /api/v1/productos/sagas/{saga}
+// ======================================================================
+export async function obtenerProductosPorSaga(nombreSaga) {
+  const url = `${PRODUCTOS_URL}/sagas/${encodeURIComponent(nombreSaga)}`;
+  const resp = await fetch(url);
+  const text = await resp.text();
+
+  if (!resp.ok) {
+    console.error("Error HTTP al obtener productos por saga:", resp.status, text);
+    return [];
+  }
+
+  if (!text || text.trim().length === 0) {
+    console.warn("Endpoint /productos/sagas/{saga} devolvió vacío para:", nombreSaga);
+    return [];
+  }
+
+  try {
+    const data = JSON.parse(text);
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.error("JSON inválido al obtener productos por saga:", err, text);
+    return [];
+  }
+}
+
+// ======================================================================
+// LISTAR PRODUCTOS PAGINADOS
+// GET /api/v1/productos/paginacion?page=X&size=Y
+// ======================================================================
+export async function listarProductosPaginado(page = 1, size = 5) {
+  const res = await fetch(`${PRODUCTOS_URL}/paginacion?page=${page}&size=${size}`);
+  const text = await res.text();
+
+  if (!res.ok) {
+    throw new Error("Status " + res.status + " → " + text);
+  }
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    // Fallback por si algo raro pasa
+    return {
+      contenido: [],
+      pagina: 1,
+      totalPaginas: 1,
+      totalElementos: 0,
+    };
+  }
+
+  // Acá asumimos que el back responde con tu PagedResponse:
+  // {
+  //   contenido: [...],
+  //   pagina: number,
+  //   totalPaginas: number,
+  //   totalElementos: number
+  // }
+  return data;
 }

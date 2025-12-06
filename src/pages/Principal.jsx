@@ -3,10 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Element, scroller } from "react-scroll";
 import { useNavigate } from "react-router-dom";
 import "../styles/principal.css";
-
-// Nota general de esta página:
-// Aquí se muestra el catálogo principal (películas, videojuegos y accesorios),
-// se gestiona el carrito en el frontend y se controla el buscador simple por nombre.
+import SagaCarousel from "../components/organisms/SagaCarousel";
+import { obtenerProductosPorSaga } from "../services/productos";
 
 // Carga todo lo que haya bajo /src/assets/img y deja lista la URL para usarla en <img src="...">
 const IMGS = import.meta.glob("../assets/img/**/*", { eager: true, as: "url" });
@@ -26,98 +24,42 @@ const img = (p) => {
   return hit[1];
 };
 
+// Mapeo simple nombre → imagen local.)
+const PRODUCT_IMAGES = {
+  // Spider-Man Peliculas.
+  "spiderman 1": "peliculas/spiderman/PSpiderman1.webp",
+  "spiderman 2": "peliculas/spiderman/PSpiderman2.webp",
+  "spiderman 3": "peliculas/spiderman/PSpiderman3.webp",
+  // Spider-Man Videojuegos.
+  "marvel's spider-man remastered": "videojuegos/spiderman/VGSpiderman1.webp",
+  "spider-man: miles morales": "videojuegos/spiderman/VGSpidermanMM.webp",
+  "marvel's spider-man 2": "videojuegos/spiderman/VGSpiderman2.webp",
+  // Spider-Man Accesorios.
+  "máscara de spider-man – edición de colección": "accesorios/spiderman/ACCSpiderman1.webp",
+  "control dualsense ps5 – edición spider-man (diseño venom / simbionte)": "accesorios/spiderman/ACCSpiderman2.webp",
+  "audífonos gamer spider-man – edición marvel": "accesorios/spiderman/ACCSpiderman3.webp",
+
+  // Minecraft Peliculas
+  "una pelicula de minecraft": "peliculas/minecraft/PMinecraft.webp",
+  "una película de minecraft": "peliculas/minecraft/PMinecraft.webp",
+  // Minecraft Videojuegos
+  "minecraft: java & bedrock": "videojuegos/minecraft/VGMinecraftJyB.webp",
+  "minecraft: dungeons": "videojuegos/minecraft/VGMinecraftDungeons.webp",
+  // Minecraft Accesorios.
+  "lámpara abeja minecraft": "accesorios/minecraft/ACCMinecraft1.webp",
+  "audífonos gamer minecraft - edición mojang": "accesorios/minecraft/ACCMinecraft2.webp",
+  "preservativo minecraft": "accesorios/minecraft/ACCMinecraft3.webp",
+
+};
+
 // Formatea un número como pesos chilenos.
 const clp = (n) => `$${Number(n || 0).toLocaleString("es-CL")}`;
 
-// ====== Datos de sliders (3 películas, 3 videojuegos, 3 accesorios, cada uno con ID único) ======
-const SLIDES = {
-  peliculas: [
-    {
-      id: 1,
-      name: "Spider-Man (2002)",
-      price: 12990,
-      desc: "Título completo: Spider-Man. Autor: Stan Lee y Sam Raimi. Fecha de publicación: 2002. Imagen destacada: Spider-Man enfrentando al Duende Verde. Contenido del artículo: Peter Parker obtiene poderes tras la mordida de una araña y, tras la muerte de su tío Ben, aprende que con gran poder viene gran responsabilidad. Mientras intenta equilibrar su vida personal, enfrenta al Duende Verde en una lucha que define su destino como héroe. Comentarios: ¿Qué opinas de este origen? Comparte tu experiencia.",
-      src: img("peliculas/PSpiderman1.webp"),
-      alt: "Spider-Man (2002)",
-    },
-    {
-      id: 2,
-      name: "Spider-Man 2 (2004)",
-      price: 13990,
-      desc: "Título completo: Spider-Man 2. Autor: Stan Lee y Sam Raimi. Fecha de publicación: 2004. Imagen destacada: Spider-Man enfrentando a Doctor Octopus. Contenido del artículo: Peter Parker enfrenta deudas, problemas personales y la amenaza del Doctor Octopus mientras sus poderes fallan. Una historia de identidad y deber que muestra que el heroísmo es actuar pese al miedo. Comentarios: ¿Qué opinas de esta entrega? Comparte tu experiencia.",
-      src: img("peliculas/PSpiderman2.webp"),
-      alt: "Spider-Man 2 (2004)",
-    },
-    {
-      id: 3,
-      name: "Spider-Man 3 (2007)",
-      price: 11990,
-      desc: "Título completo: Spider-Man 3. Autor: Stan Lee y Sam Raimi. Fecha de publicación: 2007. Imagen destacada: Spider-Man bajo la influencia del simbionte. Contenido del artículo: Peter enfrenta al Hombre de Arena y a Venom mientras lucha contra sus propios impulsos oscuros amplificados por el simbionte. Una historia de redención, perdón y responsabilidad que cierra la trilogía poniendo a prueba el corazón del héroe. Comentarios: ¿Qué opinas de esta entrega? Comparte tu experiencia.",
-      src: img("peliculas/PSpiderman3.webp"),
-      alt: "Spider-Man 3 (2007)",
-    },
-  ],
-  videojuegos: [
-    {
-      id: 4,
-      name: "Spider-Man Remastered",
-      price: 69990,
-      desc: "Título completo: Spider-Man Remastered. Autor: Insomniac Games y Marvel Games. Fecha de publicación: 2020. Imagen destacada: Spider-Man en acción sobre Nueva York. Contenido del artículo: Peter Parker, con ocho años como Spider-Man, enfrenta a los Demonios Internos liderados por Mister Negative en una historia llena de acción. Incluye combate dinámico, gadgets innovadores y una ciudad de Nueva York detallada con misiones y eventos que enriquecen la experiencia. Comentarios: ¿Qué opinas de este juego? Comparte tu experiencia.",
-      src: img("videojuegos/VGSpiderman1.webp"),
-      alt: "Spider-Man Remastered",
-    },
-    {
-      id: 5,
-      name: "Spider-Man: Miles Morales",
-      price: 59990,
-      desc: "Título completo: Spider-Man: Miles Morales. Autor: Insomniac Games y Marvel Games. Fecha de publicación: 2020. Imagen destacada: Miles Morales balanceándose entre los rascacielos de Harlem. Contenido del artículo: Miles Morales descubre y domina poderes bioeléctricos y de camuflaje mientras protege Harlem. Una historia de emoción y responsabilidad en un mundo abierto vibrante que pone a prueba su valor como Spider-Man. Comentarios: ¿Qué opinas de este juego? Comparte tu experiencia.",
-      src: img("videojuegos/VGSpidermanMM.webp"),
-      alt: "Spider-Man Miles Morales",
-    },
-    {
-      id: 6,
-      name: "Marvel’s Spider-Man 2",
-      price: 72990,
-      desc: "Título completo: Marvel’s Spider-Man 2. Autor: Insomniac Games y Marvel Games. Fecha de publicación: 2023. Imagen destacada: Peter y Miles luchando contra Venom. Contenido del artículo: Peter y Miles se unen para enfrentar a Kraven y Venom en un mundo abierto más grande y dinámico, con cambios rápidos entre héroes, nuevos movimientos y gadgets. Una entrega cargada de acción y decisiones que ponen a prueba la destreza de ambos Spider-Man. Comentarios: ¿Qué opinas de esta entrega? Comparte tu experiencia.",
-      src: img("videojuegos/VGSpiderman2.webp"),
-      alt: "Spider-Man 2",
-    },
-  ],
-  accesorios: [
-    {
-      id: 7,
-      name: "DualSense Spider-Man",
-      price: 139990,
-      desc: "Título completo: DualSense Spider-Man. Autor: Sony Interactive Entertainment. Fecha de publicación: 2023. Imagen destacada: Control DualSense edición especial Spider-Man con patrón de simbionte. Contenido del artículo: Control edición especial de PS5 con diseño negro y rojo inspirado en el simbionte, logo de la araña y base de carga LED. Ofrece precisión, comodidad y la tecnología háptica característica de la consola en un estilo único para fanáticos de Marvel. Comentarios: ¿Qué opinas de este accesorio? Comparte tu experiencia.",
-      src: img("accesorios/ACCSpiderman2.webp"),
-      alt: "DualSense Spider-Man",
-    },
-    {
-      id: 8,
-      name: "Audífonos Xtech Spiderman WRD LED",
-      price: 29990,
-      desc: "Título completo: Audífonos Xtech Spiderman Headset WRD LED. Autor: Xtech. Fecha de publicación: 2022. Imagen destacada: Audífonos gamer edición Spider-Man con iluminación LED. Contenido del artículo: Audífonos con diseño negro y rojo, logo de Spider-Man, micrófono ajustable e iluminación LED. Ofrecen comodidad, sonido envolvente y durabilidad para largas sesiones de juego. Comentarios: ¿Qué opinas de este accesorio? Comparte tu experiencia.",
-      src: img("accesorios/ACCSpiderman3.webp"),
-      alt: "Audífonos Xtech Spiderman WRD LED",
-    },
-    {
-      id: 9,
-      name: "Máscara Electrónica de Spider-Man",
-      price: 59990,
-      desc: "Título completo: Máscara Electrónica de Spider-Man. Autor: Marvel. Imagen destacada: Máscara con detalles electrónicos. Contenido del artículo: Máscara con detalles electrónicos para cosplay/juego, pensada para fans que buscan ambientación y diversión temática. Comentarios: ¿Qué opinas de este accesorio? Comparte tu experiencia.",
-      src: img("accesorios/ACCSpiderman1.webp"),
-      alt: "Máscara Electrónica de Spider-Man",
-    },
-  ],
-};
-
 // ====== Storage / Carrito ======
-// Claves usadas en localStorage para guardar carrito y total.
 const STORAGE = { CART: "carrito", TOTAL: "totalCompra" };
 
 // Hook que encapsula toda la lógica del carrito en el frontend.
 function useCarrito() {
-  // Cargamos el carrito desde localStorage solo una vez al inicio.
   const [items, setItems] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(STORAGE.CART)) || [];
@@ -126,7 +68,6 @@ function useCarrito() {
     }
   });
 
-  // Calcula el total del carrito cada vez que cambian los items.
   const total = useMemo(
     () =>
       items.reduce(
@@ -137,19 +78,16 @@ function useCarrito() {
     [items]
   );
 
-  // Calcula el total de unidades (suma de cantidades) en el carrito.
   const unidades = useMemo(
     () => items.reduce((acc, it) => acc + (Number(it.cantidad) || 1), 0),
     [items]
   );
 
-  // Cada vez que cambia el carrito o el total, se guardan en localStorage.
   useEffect(() => {
     localStorage.setItem(STORAGE.CART, JSON.stringify(items));
     localStorage.setItem(STORAGE.TOTAL, String(total));
   }, [items, total]);
 
-  // Agrega un producto al carrito. Si ya existe, solo aumenta la cantidad.
   const add = (idProducto, nombre, precio) =>
     setItems((prev) => {
       const idx = prev.findIndex((p) => p.idProducto === idProducto);
@@ -167,7 +105,6 @@ function useCarrito() {
       ];
     });
 
-  // Aumenta en 1 la cantidad de un ítem específico.
   const inc = (i) =>
     setItems((prev) =>
       prev.map((it, idx) =>
@@ -177,7 +114,6 @@ function useCarrito() {
       )
     );
 
-  // Disminuye en 1 la cantidad de un ítem o lo elimina si llega a cero.
   const dec = (i) =>
     setItems((prev) => {
       const next = [...prev];
@@ -187,22 +123,63 @@ function useCarrito() {
       return next;
     });
 
-  // Elimina un ítem del carrito según su posición.
   const delItem = (i) =>
     setItems((prev) => prev.filter((_, idx) => idx !== i));
 
   return { items, total, unidades, add, inc, dec, delItem };
 }
 
-// ====== Carrusel de productos por sección (películas, videojuegos, accesorios) ======
-function Carousel({ id, sectionKey, onAdd, navH, targetName }) {
-  const slides = SLIDES[sectionKey];
-  const [i, setI] = useState(0);          // Índice del slide actual.
-  const [openInfo, setOpenInfo] = useState(false); // Si se muestra o no la descripción larga.
+// ====== Carrusel de productos por sección ======
+function Carousel({ id, productos, sectionKey, onAdd, navH, targetName }) {
+  const slides = productos || [];
+  const [i, setI] = useState(0);
+  const [openInfo, setOpenInfo] = useState(false);
   const ctaRef = useRef(null);
+
+  const hasSlides = slides.length > 0;
+
+  useEffect(() => {
+    if (!hasSlides) return;
+    if (i >= slides.length) {
+      setI(0);
+      setOpenInfo(false);
+    }
+  }, [hasSlides, slides.length, i]);
+
+  useEffect(() => {
+    if (!hasSlides) return;
+    const el = ctaRef.current;
+    if (!el) return;
+    el.classList.add("nl-cta--fade");
+    const t = setTimeout(() => el.classList.remove("nl-cta--fade"), 150);
+    return () => clearTimeout(t);
+  }, [hasSlides, i]);
+
+  useEffect(() => {
+    if (!hasSlides || !targetName) return;
+    const idx = slides.findIndex(
+      (s) => s.name.toLowerCase() === targetName.toLowerCase()
+    );
+    if (idx !== -1) {
+      setI(idx);
+      setOpenInfo(true);
+    }
+  }, [hasSlides, targetName, slides]);
+
+  if (!hasSlides) {
+    return (
+      <section className={`producto card p-2 m-2 ${sectionKey}`} id={id}>
+        <div className="nl-carousel nl-carousel--empty">
+          <p className="text-center text-muted m-0">
+            No hay productos disponibles en esta categoría.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   const current = slides[i];
 
-  // Títulos bonitos para los botones de navegación entre secciones.
   const pretty = {
     peliculas: "- Películas -",
     videojuegos: "- Videojuegos -",
@@ -214,41 +191,17 @@ function Carousel({ id, sectionKey, onAdd, navH, targetName }) {
     accesorios: "accesorios",
   };
 
-  // Secciones relacionadas para los botones dentro del carrusel.
   const RELATED = {
     peliculas: ["videojuegos", "accesorios"],
     videojuegos: ["peliculas", "accesorios"],
     accesorios: ["peliculas", "videojuegos"],
   };
 
-  // Cambia de slide hacia adelante o atrás.
   const go = (dir) => {
     setOpenInfo(false);
     setI((prev) => (prev + dir + slides.length) % slides.length);
   };
 
-  // Efecto visual simple cuando cambia el producto mostrado.
-  useEffect(() => {
-    const el = ctaRef.current;
-    if (!el) return;
-    el.classList.add("nl-cta--fade");
-    const t = setTimeout(() => el.classList.remove("nl-cta--fade"), 150);
-    return () => clearTimeout(t);
-  }, [i]);
-
-  // Cuando viene un producto objetivo desde el buscador, movemos el carrusel a ese ítem.
-  useEffect(() => {
-    if (!targetName) return;
-    const idx = slides.findIndex(
-      (s) => s.name.toLowerCase() === targetName.toLowerCase()
-    );
-    if (idx !== -1) {
-      setI(idx);
-      setOpenInfo(true); // Abrimos la info para que se note cuál fue el resultado.
-    }
-  }, [targetName, slides]);
-
-  // Hace scroll hacia la sección indicada.
   const jumpTo = (name) => {
     scroller.scrollTo(name, { smooth: true, duration: 600, offset: -navH });
   };
@@ -267,11 +220,11 @@ function Carousel({ id, sectionKey, onAdd, navH, targetName }) {
           style={{ transform: `translateX(-${i * 100}%)` }}
         >
           {slides.map((s, idx) => (
-            <div className="nl-slide" key={idx}>
+            <div className="nl-slide" key={s.id ?? idx}>
               <img
                 className="overlay"
                 src={s.src}
-                alt={s.alt}
+                alt={s.alt || s.name}
                 loading="lazy"
               />
             </div>
@@ -286,7 +239,6 @@ function Carousel({ id, sectionKey, onAdd, navH, targetName }) {
           className={`nl-cta ${openInfo ? "is-open" : "is-closed"}`}
           ref={ctaRef}
         >
-          {/* Vista compacta: solo precio y botones básicos */}
           {!openInfo && (
             <>
               <strong className="nl-price">{clp(current.price)}</strong>
@@ -309,7 +261,6 @@ function Carousel({ id, sectionKey, onAdd, navH, targetName }) {
             </>
           )}
 
-          {/* Vista extendida: texto completo + navegación a secciones relacionadas */}
           {openInfo && (
             <>
               <div
@@ -376,19 +327,21 @@ function Carousel({ id, sectionKey, onAdd, navH, targetName }) {
 export default function Principal() {
   const navigate = useNavigate();
 
-  // Carrito centralizado usando el hook personalizado.
+  const [selectedSaga, setSelectedSaga] = useState(null);
+
+  const [peliculas, setPeliculas] = useState([]);
+  const [videojuegos, setVideojuegos] = useState([]);
+  const [accesorios, setAccesorios] = useState([]);
+
   const { items, total, unidades, add, inc, dec, delItem } = useCarrito();
 
-  // Controla si el panel del carrito está abierto o cerrado.
   const [cartOpen, setCartOpen] = useState(false);
 
-  // Texto del buscador.
   const [search, setSearch] = useState("");
-  // Resultado de búsqueda actual: { section, name } o null.
   const [searchHit, setSearchHit] = useState(null);
 
-  // Altura real del navbar (con un pequeño margen) para usar en offsets de scroll.
   const [navH, setNavH] = useState(120);
+
   useEffect(() => {
     const calc = () => {
       const nav = document.querySelector(
@@ -396,33 +349,154 @@ export default function Principal() {
       );
       setNavH(((nav?.offsetHeight) || 120) + 10);
     };
+
     calc();
     window.addEventListener("resize", calc);
     return () => window.removeEventListener("resize", calc);
   }, []);
 
-  // Clase de estilo específica para esta ruta en el body.
   useEffect(() => {
     document.body.classList.add("route-principal");
     return () => document.body.classList.remove("route-principal");
   }, []);
 
-  // Cerrar el carrito con la tecla Escape.
   useEffect(() => {
-    const k = (e) => e.key === "Escape" && setCartOpen(false);
+    const k = (e) => {
+      if (e.key === "Escape") setCartOpen(false);
+    };
     document.addEventListener("keydown", k);
     return () => document.removeEventListener("keydown", k);
   }, []);
 
-  // Maneja el envío del formulario del buscador.
+    // Cargar productos SOLO cuando haya saga seleccionada
+    useEffect(() => {
+      if (!selectedSaga) {
+        setPeliculas([]);
+        setVideojuegos([]);
+        setAccesorios([]);
+        return;
+      }
+
+      async function cargarProductosDeSaga() {
+        try {
+          const data = await obtenerProductosPorSaga(selectedSaga);
+          console.log(
+            "Productos recibidos en Principal para saga:",
+            selectedSaga,
+            data
+          );
+
+          if (!Array.isArray(data)) return;
+
+          const mapToSlide = (p) => {
+          const key = p.nombre?.toLowerCase() || "";
+          const localImage = PRODUCT_IMAGES[key] || "logos/NoLimits.webp";
+
+          return {
+            id: p.id,
+            name: p.nombre,
+            price: p.precio,
+            desc:
+              p.descripcion ||
+              `Producto ${p.nombre} de la categoría ${p.tipoProductoNombre || ""}.`,
+            src: img(localImage),
+            alt: p.nombre,
+          };
+        };
+
+          const getTipo = (p) =>
+            (p.tipoProductoNombre || p.tipoProducto || p.tipo || "")
+              .toString()
+              .toLowerCase()
+              .normalize("NFD")               // separa letras y tildes
+              .replace(/[\u0300-\u036f]/g, ""); // elimina tildes
+
+          const peliculasData = data.filter((p) =>
+            getTipo(p).includes("pelic")
+          );
+
+          // ORDEN PERSONALIZADO PARA VIDEOJUEGOS DE MINECRAFT
+          const minecraftOrder = [
+            "minecraft: java & bedrock",
+            "minecraft: dungeons"
+          ];
+
+          let videojuegosData = data
+            .filter((p) => getTipo(p).includes("video"))
+            .sort((a, b) => {
+              const aName = a.nombre.toLowerCase();
+              const bName = b.nombre.toLowerCase();
+
+              const aIdx = minecraftOrder.indexOf(aName);
+              const bIdx = minecraftOrder.indexOf(bName);
+
+              // Los que no estén en la lista se van al final
+              if (aIdx === -1 && bIdx === -1) return 0;
+              if (aIdx === -1) return 1;
+              if (bIdx === -1) return -1;
+
+              return aIdx - bIdx;
+            });
+
+          // Accesorios
+          let accesoriosData = data.filter((p) =>
+            getTipo(p).includes("acces")
+          );
+
+          // Orden personalizado SOLO para Minecraft
+          const minecraftAccOrder = [
+            "lámpara abeja minecraft",
+            "audífonos gamer minecraft - edición mojang",
+            "preservativo minecraft",
+          ];
+
+          if ((selectedSaga || "").toLowerCase() === "minecraft") {
+            accesoriosData = accesoriosData.sort((a, b) => {
+              const aName = a.nombre.toLowerCase();
+              const bName = b.nombre.toLowerCase();
+
+              const aIdx = minecraftAccOrder.indexOf(aName);
+              const bIdx = minecraftAccOrder.indexOf(bName);
+
+              if (aIdx === -1 && bIdx === -1) return 0;
+              if (aIdx === -1) return 1;
+              if (bIdx === -1) return -1;
+
+              return aIdx - bIdx;
+            });
+          }
+
+          setPeliculas(peliculasData.map(mapToSlide));
+          setVideojuegos(videojuegosData.map(mapToSlide));
+          setAccesorios(accesoriosData.map(mapToSlide));
+        } catch (err) {
+          console.error("Error cargando productos de saga:", err);
+        }
+      }
+
+      cargarProductosDeSaga();
+    }, [selectedSaga]);
+
+  const sagaLabel = selectedSaga || "";
+
   const handleSearch = (e) => {
     e.preventDefault();
     const q = search.trim().toLowerCase();
     if (!q) return;
 
-    // Buscar en todas las secciones de SLIDES por nombre parcial.
+    if (!selectedSaga) {
+      alert("Primero selecciona una saga del carrusel.");
+      return;
+    }
+
+    const secciones = {
+      peliculas,
+      videojuegos,
+      accesorios,
+    };
+
     let found = null;
-    for (const [section, arr] of Object.entries(SLIDES)) {
+    for (const [section, arr] of Object.entries(secciones)) {
       const idx = arr.findIndex((s) => s.name.toLowerCase().includes(q));
       if (idx !== -1) {
         found = { section, name: arr[idx].name };
@@ -431,14 +505,14 @@ export default function Principal() {
     }
 
     if (!found) {
-      alert("No se encontró ningún producto con ese nombre.");
+      alert(
+        "No se encontró ningún producto con ese nombre en la saga seleccionada."
+      );
       return;
     }
 
-    // Guardamos el resultado para que el carrusel pueda posicionarse en el producto exacto.
     setSearchHit(found);
 
-    // Hacemos scroll a la sección encontrada.
     scroller.scrollTo(found.section, {
       smooth: true,
       duration: 600,
@@ -463,7 +537,6 @@ export default function Principal() {
               <span className="navbar-toggler-icon" />
             </button>
 
-            {/* Botón para cerrar sesión rápidamente */}
             <button
               className="btn-cerrarSesion"
               onClick={() => {
@@ -479,7 +552,6 @@ export default function Principal() {
               id="navbarSupportedContent"
             >
               <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-                {/* Menú desplegable de categorías con scroll a las secciones */}
                 <li className="nav-item dropdown">
                   <a
                     className="nav-link dropdown-toggle btn-categoria"
@@ -527,7 +599,6 @@ export default function Principal() {
                   </ul>
                 </li>
 
-                {/* Botón para ir al perfil del usuario */}
                 <li className="nav-item">
                   <button
                     className="btn-perfil ms-3"
@@ -537,7 +608,6 @@ export default function Principal() {
                   </button>
                 </li>
 
-                {/* Botón para ir al historial de compras */}
                 <li className="nav-item">
                   <button
                     className="btn-perfil ms-3"
@@ -548,10 +618,8 @@ export default function Principal() {
                 </li>
               </ul>
 
-              {/* Marca central de la tienda */}
               <h1 id="brand">°-._ NoLimits _.-°</h1>
 
-              {/* Buscador simple por nombre de producto */}
               <form className="search-box" onSubmit={handleSearch}>
                 <input
                   type="text"
@@ -564,7 +632,6 @@ export default function Principal() {
                 </button>
               </form>
 
-              {/* Botón para abrir/cerrar el carrito flotante */}
               <button
                 className="carrito-btn"
                 onClick={() => setCartOpen((v) => !v)}
@@ -592,57 +659,87 @@ export default function Principal() {
         </div>
       </header>
 
-      {/* CONTENIDO PRINCIPAL: LOS TRES CARRUSELES */}
+      {/* SAGAS DESTACADAS */}
+      <section className="sagas-section">
+        <h2 className="sagas-title">- Sagas destacadas -</h2>
+        <SagaCarousel
+          onSagaSelect={setSelectedSaga}
+          selectedSagaName={selectedSaga}
+        />
+      </section>
+
+      {/* CONTENIDO PRINCIPAL */}
       <main className="productos-container d-flex flex-column align-items-center">
-        {/* Sección Películas */}
-        <Element name="peliculas">
-          <div>
-            <h2 id="peliculas-title" className="titulos">
-              - Películas -
-            </h2>
-          </div>
-        </Element>
-        <Carousel
-          id="peliculas"
-          sectionKey="peliculas"
-          onAdd={add}
-          navH={navH}
-          targetName={searchHit?.section === "peliculas" ? searchHit.name : null}
-        />
+        {!selectedSaga && (
+        <div className="saga-helper-wrapper">
+          <p className="saga-helper-banner">
+            _.- Selecciona una saga del carrusel superior para ver las películas,
+            videojuegos y accesorios relacionados -._
+            <span className="saga-helper-underline"></span>
+          </p>
+        </div>
+      )}
 
-        {/* Sección Videojuegos */}
-        <Element name="videojuegos">
-          <div className="titulos">
-            <h2 id="videojuegos-title">- Videojuegos -</h2>
-          </div>
-        </Element>
-        <Carousel
-          id="videojuegos"
-          sectionKey="videojuegos"
-          onAdd={add}
-          navH={navH}
-          targetName={
-            searchHit?.section === "videojuegos" ? searchHit.name : null
-          }
-        />
+        {selectedSaga && (
+          <>
+            {/* Películas */}
+            <Element name="peliculas">
+              <div>
+                <h2 id="peliculas-title" className="titulos">
+                  - Películas{ sagaLabel ? ` : ${sagaLabel}` : "" } -
+                </h2>
+              </div>
+            </Element>
+            <Carousel
+              id="peliculas"
+              sectionKey="peliculas"
+              productos={peliculas}
+              onAdd={add}
+              navH={navH}
+              targetName={
+                searchHit?.section === "peliculas" ? searchHit.name : null
+              }
+            />
 
-        {/* Sección Accesorios */}
-        <Element name="accesorios">
-          <div>
-            <h2 id="accesorios-title" className="titulos">
-              - Accesorios -
-            </h2>
-          </div>
-        </Element>
-        <Carousel
-          id="accesorios"
-          sectionKey="accesorios"
-          onAdd={add}
-          navH={navH}
-          targetName={
-            searchHit?.section === "accesorios" ? searchHit.name : null
-          }
-        />
+            {/* Videojuegos */}
+            <Element name="videojuegos">
+              <div className="titulos">
+                <h2 id="videojuegos-title">
+                  - Videojuegos{ sagaLabel ? ` : ${sagaLabel}` : "" } -
+                </h2>
+              </div>
+            </Element>
+            <Carousel
+              id="videojuegos"
+              sectionKey="videojuegos"
+              productos={videojuegos}
+              onAdd={add}
+              navH={navH}
+              targetName={
+                searchHit?.section === "videojuegos" ? searchHit.name : null
+              }
+            />
+
+            {/* Accesorios */}
+            <Element name="accesorios">
+              <div>
+                <h2 id="accesorios-title" className="titulos">
+                  - Accesorios{ sagaLabel ? ` : ${sagaLabel}` : "" } -
+                </h2>
+              </div>
+            </Element>
+            <Carousel
+              id="accesorios"
+              sectionKey="accesorios"
+              productos={accesorios}
+              onAdd={add}
+              navH={navH}
+              targetName={
+                searchHit?.section === "accesorios" ? searchHit.name : null
+              }
+            />
+          </>
+        )}
       </main>
 
       {/* PANEL DEL CARRITO FLOANTE */}
@@ -650,7 +747,6 @@ export default function Principal() {
         className={`fondo-carrito ${cartOpen ? "is-open" : ""}`}
         id="modeloCarrito"
         onClick={(e) => {
-          // Si el usuario hace clic fuera del contenido, se cierra el carrito.
           if (e.target.id === "modeloCarrito") setCartOpen(false);
         }}
       >
@@ -696,10 +792,7 @@ export default function Principal() {
           <h3>
             Total: <span id="total">{clp(total)}</span>
           </h3>
-          <button
-            className="btn-comprar"
-            onClick={() => navigate("/pago")}
-          >
+          <button className="btn-comprar" onClick={() => navigate("/pago")}>
             - Finalizar compra -
           </button>
           <button className="btn-cerrar" onClick={() => setCartOpen(false)}>
@@ -708,7 +801,7 @@ export default function Principal() {
         </div>
       </div>
 
-      {/* FOOTER CON ENLACE PARA SUBIR Y ENLACES SIMBÓLICOS */}
+      {/* FOOTER */}
       <footer>
         <nav className="nl-nav1">
           <div className="nl-nav1-inner">
