@@ -1,11 +1,11 @@
 // Se importa React y useState para manejar estados internos del componente
 import React, { useState } from "react";
 
-// Se importan las funciones del backend para crear o editar un desarrollador
+// Se importan las funciones del backend para crear o editar un tipo de desarrollador
 import {
-  crearDesarrollador,
-  editarDesarrollador,
-} from "../../services/desarrolladores";
+  crearTipoDesarrollador,
+  actualizarTipoDesarrollador,
+} from "../../services/tiposDesarrollador";
 
 // Input de texto reutilizable
 import InputText from "../atoms/InputText";
@@ -17,38 +17,22 @@ import { ButtonAction } from "../atoms/ButtonAction";
  * Componente CrearDesarrollador
  *
  * Este componente cumple dos funciones:
- *  - Crear un nuevo desarrollador.
- *  - Editar un desarrollador existente.
+ *  - Crear un nuevo tipo de desarrollador.
+ *  - Editar un tipo de desarrollador existente.
  *
- * Depende de la prop "modo":
- *    modo === "crear"  -> crea uno nuevo
- *    modo === "editar" -> edita el recibido por props
- *
- * Parámetros (props):
- *  - modo: indica si se está creando o editando
+ * Props:
+ *  - modo: "crear" o "editar"
  *  - desarrollador: datos existentes cuando se edita
  *  - onCerrar: función que cierra el modal
  */
 export default function CrearDesarrollador({ modo, desarrollador, onCerrar }) {
-  /**
-   * Estado del formulario
-   * Se rellena con datos anteriores si estamos editando,
-   * o queda en blanco si estamos creando.
-   */
   const [form, setForm] = useState({
     nombre: desarrollador?.nombre || "",
     activo: desarrollador?.activo ?? true,
   });
 
-  // Guarda mensajes de error por cada campo
   const [errores, setErrores] = useState({});
 
-  /**
-   * handleChange
-   *
-   * Se ejecuta cada vez que el usuario escribe o cambia un checkbox.
-   * Actualiza el estado del formulario y limpia errores del campo editado.
-   */
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -60,17 +44,6 @@ export default function CrearDesarrollador({ modo, desarrollador, onCerrar }) {
     setErrores((prev) => ({ ...prev, [name]: "" }));
   };
 
-  /**
-   * validar
-   *
-   * Valida:
-   *  - que el nombre no esté vacío
-   *  - que no tenga más de 120 caracteres
-   *
-   * Devuelve:
-   *  - true si todo está bien
-   *  - false si hay errores
-   */
   const validar = () => {
     const err = {};
     let ok = true;
@@ -89,17 +62,13 @@ export default function CrearDesarrollador({ modo, desarrollador, onCerrar }) {
     return ok;
   };
 
-  /**
-   * handleSubmit
-   *
-   * Se ejecuta cuando el usuario envía el formulario.
-   * Si la validación pasa, arma el payload y llama al backend.
-   */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validar()) return; // Evita enviar si hay errores
+    if (!validar()) return;
 
+    // OJO: si tu backend solo espera "nombre",
+    // cambia esto a: const payload = { nombre: form.nombre.trim() };
     const payload = {
       nombre: form.nombre.trim(),
       activo: !!form.activo,
@@ -107,33 +76,27 @@ export default function CrearDesarrollador({ modo, desarrollador, onCerrar }) {
 
     try {
       if (modo === "crear") {
-        await crearDesarrollador(payload);
-        alert("Desarrollador creado con éxito!");
+        await crearTipoDesarrollador(payload);
+        alert("Tipo de desarrollador creado con éxito!");
       } else {
-        await editarDesarrollador(desarrollador.id, payload);
-        alert("Desarrollador editado correctamente!");
+        await actualizarTipoDesarrollador(desarrollador.id, payload);
+        alert("Tipo de desarrollador editado correctamente!");
       }
 
-      onCerrar(); // Cierra el modal después de guardar
+      onCerrar();
     } catch (err) {
-      alert(err.message); // Muestra error del backend
+      alert(err.message);
     }
   };
 
-  /**
-   * Render del componente
-   *
-   * Contiene:
-   *  - título dinámico según el modo
-   *  - formulario con:
-   *      * nombre
-   *      * activo (checkbox)
-   *      * botones Guardar / Cancelar
-   */
   return (
     <div className="modal-bg">
       <div className="modal-content">
-        <h2>{modo === "crear" ? "Crear Desarrollador" : "Editar Desarrollador"}</h2>
+        <h2>
+          {modo === "crear"
+            ? "Crear Tipo de Desarrollador"
+            : "Editar Tipo de Desarrollador"}
+        </h2>
 
         <form onSubmit={handleSubmit}>
           {/* Campo nombre */}
