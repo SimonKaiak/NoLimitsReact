@@ -1,3 +1,5 @@
+// Ruta: src/services/plataformas.js
+
 // ======================================================================
 // Servicio: plataformas.js
 // Maneja todo el CRUD del catálogo de Plataformas (PS5, Xbox, PC, etc.)
@@ -27,14 +29,16 @@ const API_URL = `${API_BASE}/plataformas`;
 // LISTAR PLATAFORMAS
 // GET /plataformas
 //
-// - Trae TODAS las plataformas
+// - Trae plataformas paginadas desde el backend
 // - Si viene un "search", filtramos manualmente en el FRONT
-//   (el backend aún no tiene búsqueda por nombre)
+//   pero manteniendo la forma de PagedResponse
 // ======================================================================
 export async function listarPlataformas(page = 1, search = "") {
 
-  // Llamada al endpoint (page no se usa aún)
-  const res = await fetch(API_URL);
+  // Ahora sí usamos la paginación real del backend
+  const url = `${API_URL}?page=${page}&size=10`;
+
+  const res = await fetch(url);
 
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
@@ -42,23 +46,35 @@ export async function listarPlataformas(page = 1, search = "") {
     throw new Error("Error cargando plataformas");
   }
 
-  // Convertimos a JSON
   const data = await res.json();
 
-  // Si NO hay texto de búsqueda → devolvemos todo tal cual
+  // Si NO hay búsqueda -> devolvemos tal cual lo entrega el backend
   if (!search || !search.trim()) {
     return data;
   }
 
-  // Si HAY búsqueda, filtramos en el front por nombre
+  // Si HAY búsqueda, filtramos solo el contenido por nombre
   const needle = search.trim().toLowerCase();
 
-  // A veces el backend devuelve un array directo, otras un objeto
-  const lista = Array.isArray(data) ? data : data.contenido || [];
+  // Soporta que el back devuelva:
+  // - { contenido: [...] }
+  // - { content: [...] }
+  // - o incluso un array directo (por si acaso)
+  const lista = Array.isArray(data)
+    ? data
+    : data.contenido || data.content || [];
 
-  return lista.filter((item) =>
+  const filtrado = lista.filter((item) =>
     (item.nombre || "").toLowerCase().includes(needle)
   );
+
+  // Devolvemos un PagedResponse "coherente" para el front
+  return {
+    contenido: filtrado,
+    pagina: data.pagina || page,
+    totalPaginas: data.totalPaginas || data.totalPages || 1,
+    totalElementos: data.totalElementos ?? filtrado.length,
+  };
 }
 
 
